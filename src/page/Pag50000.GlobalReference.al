@@ -59,8 +59,14 @@ page 50000 "Global Reference"
                 ApplicationArea = All;
 
                 trigger OnAction()
+                var
+                    InStream: InStream;
+                    recBLOBFile: Record "BLOB File Storage";
+                    Filename: Text[50];
                 begin
-
+                    recBLOBFile.BLOB.CreateInStream(InStream);
+                    Filename := 'EJP0123121825.txt';
+                    DownloadFromStream(InStream, '', '', '', Filename);
                 end;
             }
         }
