@@ -61,11 +61,14 @@ page 50000 "Global Reference"
                 trigger OnAction()
                 var
                     InStream: InStream;
+                    OutStream: OutStream;
                     recBLOBFile: Record "BLOB File Storage";
                     Filename: Text[50];
                 begin
                     recBLOBFile.BLOB.CreateInStream(InStream);
-                    Filename := 'EJP0123121825.txt';
+                    recBLOBFile.BLOB.CreateOutStream(OutStream);
+                    Filename := 'EJP0123121826.txt';
+                    OutStream.WriteText('test');
                     DownloadFromStream(InStream, '', '', '', Filename);
                 end;
             }

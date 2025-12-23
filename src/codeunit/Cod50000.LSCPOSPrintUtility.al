@@ -119,6 +119,56 @@ codeunit 50000 "AP POS Print Utility"
             UNTIL PrintBuffer.Next = 0;
             recBLOBFile.Modify();
         END;
+
+    end;
+
+    procedure EJCreation()
+    var
+        recLTmpBLOBFile: Record "BLOB File Storage" temporary;
+        cduLFileMngt: Codeunit "File Management";
+        cduLTempBlob: Codeunit "Temp Blob";
+        outLFile: OutStream;
+        insLFile: InStream;
+        txtLFileTextLne: Text;
+        txtLEJFileName: Text[100];
+        intLFileID: Integer;
+        TextLEJFilePath: Label '%1\%2';
+        TextLEJFileName: Label 'EJSALES%1%2.txt';
+    begin
+
+        IF NOT recLTmpBLOBFile.IsEmpty THEN //** Clear the temp table
+            recLTmpBLOBFile.DeleteAll();
+
+        txtLEJFileName := STRSUBSTNO(TextLEJFileName, Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>'));
+        IF NOT cduBLOBFileMgt.IsFileExist(intLFileID, txtLEJFileName) THEN BEGIN
+            intLFileID := cduBLOBFileMgt.CreateNewFile(1, txtLEJFileName);  //* 1 = Txt File
+            Commit();
+        END;
+        IF NOT recBLOBFile.GET(recBLOBFile.Type::File, intLFileID) THEN
+            EXIT;
+        recBLOBFile.CalcFields(BLOB);
+        IF recBLOBFile.BLOB.HasValue THEN BEGIN
+            recLTmpBLOBFile.BLOB := recBLOBFile.BLOB;       //** Copy the BLOB field to Temp table BLOB field
+            recBLOBFile.BLOB.CreateOutStream(outLFile);
+            recLTmpBLOBFile.BLOB.CreateInStream(insLFile);  //** Create instream from Temp Table Blob field                
+            WHILE NOT (insLFile.EOS()) DO BEGIN
+                CLEAR(txtLFileTextLne);
+                insLFile.ReadText(txtLFileTextLne);         //** Then write it back to the outstream of the Orig table BLOB
+                outLFile.WriteText(COPYSTR(txtLFileTextLne, 1, STRLEN(txtLFileTextLne)));
+                outLFile.Writetext();
+            END;
+        END ELSE
+            recBLOBFile.BLOB.CreateOutStream(outLFile);
+        IF PrintBuffer.FindSet() THEN BEGIN
+            REPEAT
+                IF PrintBuffer."Printed Line No." <> 0 THEN BEGIN
+
+                    outLFile.Writetext(COPYSTR(PrintBuffer.Text, 1));
+                    outLFile.Writetext();
+                END;
+            UNTIL PrintBuffer.Next = 0;
+            recBLOBFile.Modify();
+        END;
     end;
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"LSC POS Print Utility", OnBeforePrintSalesSlip, '', false, false)]
