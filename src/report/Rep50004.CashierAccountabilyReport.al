@@ -406,7 +406,7 @@ report 50004 "Cashier Accountability Report"
             2:
                 begin
                     recLTransaction.RESET;
-                    recLTransaction.SetRange("Transaction Code Type", recLTransaction."Transaction Code Type"::SRC);
+                    recLTransaction.SetRange("Transaction Code Type", recLTransaction."Transaction Code Type"::"SC");
                     recLTransaction.SetRange("Original Date", vDateFilter);
                     recLTransaction.SetRange("POS Terminal No.", codTerminal);
                     recLTransaction.SetRange("Staff ID", Staff);

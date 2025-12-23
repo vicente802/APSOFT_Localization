@@ -9,7 +9,7 @@ tableextension 50002 "LSCTransactionHeader" extends "LSC Transaction header"
         field(50001; "Transaction Code Type"; Option)
         {
             DataClassification = CustomerContent;
-            OptionMembers = "REG","Regular Customer","SRC","ZERO","PWD","SOLO","WHT1","VATW","ZRWH","ATHL",DEPOSIT,"DEPOSIT REDEEM","MRS","BRS","CCM","NAAC","MOV","ONLINE";
+            OptionMembers = "REG","Regular Customer","SC","ZERO","PWD","SOLO","WHT1","VATW","ZRWH","ATHL",DEPOSIT,"DEPOSIT REDEEM","MRS","BRS","CCM","NAAC","MOV","ONLINE";
         }
         field(50002; "Cashier Report ID"; Code[10])
         {

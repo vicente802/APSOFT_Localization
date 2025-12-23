@@ -525,7 +525,7 @@ codeunit 50001 "APEventSubscriber"
     var
     begin
         //POSTransLine."Line Disc. %" := 0;
-        if ((POSTransaction."Transaction code type" = POSTransaction."Transaction code type"::PWD) or (POSTransaction."Transaction code type" = POSTransaction."Transaction code type"::SRC)) and (POSTransaction."Total Pressed") then begin
+        if ((POSTransaction."Transaction code type" = POSTransaction."Transaction code type"::PWD) or (POSTransaction."Transaction code type" = POSTransaction."Transaction code type"::"SRC")) and (POSTransaction."Total Pressed") then begin
             Proceed := false;
             codPOSTrans.ErrorBeep('You cannot Scan item in after total press.');
         end;

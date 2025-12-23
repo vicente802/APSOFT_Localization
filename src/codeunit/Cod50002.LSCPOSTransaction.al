@@ -109,7 +109,7 @@ codeunit 50002 "AP POS Transaction"
         TransCodeType := POSSESSION.GetValue('TRANS_CODE_TYPE');
 
         if TransCodeType = 'SRC' then begin
-            POSTransaction."Transaction Code Type" := POSTransaction."Transaction Code Type"::SRC;
+            POSTransaction."Transaction Code Type" := POSTransaction."Transaction Code Type"::"SRC";
             POSTransaction."Sale Is Return Sale" := false;
             POSTransaction.Modify();
             APPOSSESSION.Reset();
@@ -684,7 +684,7 @@ codeunit 50002 "AP POS Transaction"
                          (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
 
                         if (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG) and
-                            (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::SRC) then begin
+                            (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::"SRC") then begin
                             userask := POSGUI.PosConfirm('Do you want to reset the transaction code type and customer to change to SRC', userask);
                         end;
 
@@ -693,7 +693,7 @@ codeunit 50002 "AP POS Transaction"
                             if not ValidateDepositTrans(POSTransaction) then begin
                                 if REGTransPressed(POSTransaction) then begin
                                     SRCTransPressed(POSTransaction);
-                                    UpdateFixedFilterForCustomer(Format(customer."Customer Type"::SRC));
+                                    UpdateFixedFilterForCustomer(Format(customer."Customer Type"::"SRC"));
                                     POSSESSION.SetValue('TRANS_CODE_TYPE', 'SRC');
                                     POSTransaction."Beginning Balance" := 0;
                                     POSTransaction."Booklet No." := '';
@@ -1193,7 +1193,7 @@ codeunit 50002 "AP POS Transaction"
                                     POSTransaction.modify;
                                 end;
 
-                            POSTransaction."Transaction Code Type"::SRC, POSTransaction."Transaction Code Type"::PWD, POSTransaction."Transaction Code Type"::SOLO,
+                            POSTransaction."Transaction Code Type"::"SRC", POSTransaction."Transaction Code Type"::PWD, POSTransaction."Transaction Code Type"::SOLO,
                             POSTransaction."Transaction Code Type"::ZERO, POSTransaction."Transaction Code Type"::ZRWH, POSTransaction."Transaction Code Type"::ATHL,
                             POSTransaction."Transaction Code Type"::WHT1, POSTransaction."Transaction Code Type"::VATW, POSTransaction."Transaction Code Type"::"Regular Customer",
                             POSTransaction."Transaction Code Type"::MOV, POSTransaction."Transaction Code Type"::NAAC, POSTransaction."Transaction Code Type"::ONLINE:
@@ -1209,7 +1209,7 @@ codeunit 50002 "AP POS Transaction"
                                         end;
 
                                     case POSTransaction."Transaction Code Type" of
-                                        POSTransaction."Transaction Code Type"::SRC, POSTransaction."Transaction Code Type"::PWD, POSTransaction."Transaction Code Type"::ONLINE,
+                                        POSTransaction."Transaction Code Type"::"SRC", POSTransaction."Transaction Code Type"::PWD, POSTransaction."Transaction Code Type"::ONLINE,
                                           POSTransaction."Transaction Code Type"::SOLO, POSTransaction."Transaction Code Type"::ATHL,
                                            POSTransaction."Transaction Code Type"::MOV, POSTransaction."Transaction Code Type"::NAAC:
                                             begin
@@ -1223,7 +1223,7 @@ codeunit 50002 "AP POS Transaction"
                                             begin
                                                 codPOSTrans.TotalPressed(false);
                                             end;
-                                        POSTransaction."Transaction Code Type"::SRC:
+                                        POSTransaction."Transaction Code Type"::"SRC":
                                             begin
                                                 if (GetSRCDiscount(POSTransaction, POSTransLine) = 0) then begin
                                                     ValidateDiscountCode(POSTransaction, POSTransLine, CurrInput, '');
@@ -1399,7 +1399,7 @@ codeunit 50002 "AP POS Transaction"
 
                     end;
                     case POSTransaction."Transaction Code Type" of
-                        POSTransaction."Transaction Code Type"::SRC, POSTransaction."Transaction Code Type"::PWD:
+                        POSTransaction."Transaction Code Type"::"SRC", POSTransaction."Transaction Code Type"::PWD:
                             begin
                                 if (POSTransaction."Beginning Balance" <= 0) and (POSTransaction."Booklet No." = '') then begin
                                     POSTransaction."Transaction Code Type" := POSTransaction."Transaction Code Type"::REG;
@@ -2541,7 +2541,7 @@ codeunit 50002 "AP POS Transaction"
             end;
         end;
         case recLPOSTrans."Transaction Code Type" of
-            recLPOSTrans."Transaction Code Type"::SRC, recLpostrans."Transaction Code Type"::PWD:
+            recLPOSTrans."Transaction Code Type"::"SRC", recLpostrans."Transaction Code Type"::PWD:
                 begin
                     if (recLPOSTrans."Beginning Balance" <= 0) or (recLPOSTrans."Booklet No." = '') then begin
                         recLPOSTrans."Transaction Code Type" := recLPOSTrans."Transaction Code Type"::REG;
@@ -3443,7 +3443,7 @@ codeunit 50002 "AP POS Transaction"
         txtString: Text[100];
         Discper: Text[10];
     begin
-        if (REC."Transaction Code Type" IN [REC."Transaction Code Type"::SRC, REC."Transaction Code Type"::PWD, REC."Transaction Code Type"::SOLO,
+        if (REC."Transaction Code Type" IN [REC."Transaction Code Type"::"SRC", REC."Transaction Code Type"::PWD, REC."Transaction Code Type"::SOLO,
                                           REC."Transaction Code Type"::ZERO, REC."Transaction Code Type"::WHT1, REC."Transaction Code Type"::VATW,
                                           REC."Transaction Code Type"::ZRWH, REC."Transaction Code Type"::ATHL, REC."Transaction Code Type"::NAAC, REC."Transaction Code Type"::MOV]) then begin
             case REC."Transaction Code Type" OF
@@ -3461,7 +3461,7 @@ codeunit 50002 "AP POS Transaction"
                         if CurrInput = '' then
                             CurrInput := GetDiscountCode(REC."Transaction Code Type");
                     end;
-                REC."Transaction Code Type"::SRC:
+                REC."Transaction Code Type"::"SRC":
                     begin
                         if GetSRCDiscount(REC, LineRec) <> 0 then
                             exit;
@@ -4441,7 +4441,7 @@ codeunit 50002 "AP POS Transaction"
 
                     if recLPOSTransLine.Number <> '' then
                         if RecLitem.Get(recLPOSTransLine.Number) then begin
-                            if REC."Transaction Code Type" = REC."Transaction Code Type"::SRC then
+                            if REC."Transaction Code Type" = REC."Transaction Code Type"::"SRC" then
                                 decDiscountpercen := RecLitem."SRC Discount %";
                             if REC."Transaction Code Type" = REC."Transaction Code Type"::PWD then
                                 decDiscountpercen := RecLitem."PWD Discount %";
@@ -4773,7 +4773,7 @@ codeunit 50002 "AP POS Transaction"
 
                     if recLPOSTransLine.Number <> '' then
                         if RecLitem.Get(recLPOSTransLine.Number) then begin
-                            if REC."Transaction Code Type" = REC."Transaction Code Type"::SRC then
+                            if REC."Transaction Code Type" = REC."Transaction Code Type"::"SRC" then
                                 decDiscountpercen := RecLitem."SRC Discount %";
                             if REC."Transaction Code Type" = REC."Transaction Code Type"::PWD then
                                 decDiscountpercen := RecLitem."PWD Discount %";
@@ -5610,7 +5610,7 @@ codeunit 50002 "AP POS Transaction"
             if TransactionType = 'SRC' then begin
                 customer.Reset();
                 customer.SetRange("No.", POSTransaction."Customer No.");
-                customer.SetRange("Customer Type", customer."Customer Type"::SRC);
+                customer.SetRange("Customer Type", customer."Customer Type"::"SRC");
                 if not customer.FindFirst() then begin
                     POSTransaction."Customer No." := '';
                     POSTransaction.modify();
@@ -5919,7 +5919,7 @@ codeunit 50002 "AP POS Transaction"
                 Disc_Amount := Disc_Amount + (recLpostransLine.Amount + recLPOSTransLine."Discount Amount");
             until recLPOSTransLine.next = 0;
 
-        if REC."Transaction Code Type" in [REC."Transaction Code Type"::SOLO, REC."Transaction Code Type"::PWD, REC."Transaction Code Type"::SRC] then
+        if REC."Transaction Code Type" in [REC."Transaction Code Type"::SOLO, REC."Transaction Code Type"::PWD, REC."Transaction Code Type"::"SRC"] then
             if REC."Current Balance" < Disc_Amount then begin
 
             end;
@@ -5938,7 +5938,7 @@ codeunit 50002 "AP POS Transaction"
             repeat
                 if RecLitem.Get(recLPOSTransLine.Number) and (RecLitem."Discount %" > 0) then begin
                     case REC."Transaction Code Type" of
-                        REC."Transaction Code Type"::SRC:
+                        REC."Transaction Code Type"::"SRC":
                             recLPOSTransLine."Discount Type" := recLPOSTransLine."Discount Type"::SRC;
                         REC."Transaction Code Type"::PWD:
                             recLPOSTransLine."Discount Type" := recLPOSTransLine."Discount Type"::PWD;
@@ -6046,7 +6046,7 @@ codeunit 50002 "AP POS Transaction"
         recLEligibilityLedger: Record DiscountEligibilityLedger;
     begin
         CASE POSTransaction."Transaction Code Type" OF
-            POSTransaction."Transaction Code Type"::SRC, POSTransaction."Transaction Code Type"::PWD:
+            POSTransaction."Transaction Code Type"::"SRC", POSTransaction."Transaction Code Type"::PWD:
                 begin
                     recLEligibilityLedger.Init();
                     recLEligibilityLedger."Receipt No." := POSTransaction."Receipt No.";
