@@ -1724,7 +1724,7 @@ codeunit 50000 "AP POS Print Utility"
                 DSTR1 := '#L#################################';
                 FieldValue[1] := txtTINNUMBER + FORMAT(recLcustomer.TIN);
                 case recLCustomer."Customer Type" of
-                    recLCustomer."Customer Type"::SRC, recLCustomer."Customer Type"::PWD, recLCustomer."Customer Type"::"Solo Parent", recLCustomer."Customer Type"::Athlete, recLCustomer."Customer Type"::"Zero Rated":
+                    recLCustomer."Customer Type"::"SRC", recLCustomer."Customer Type"::PWD, recLCustomer."Customer Type"::"Solo Parent", recLCustomer."Customer Type"::Athlete, recLCustomer."Customer Type"::"Zero Rated":
                         begin
                             CLEAR(FieldValue);
                             FieldValue[1] := txtIDNo + FORMAT(recLcustomer.TIN);
@@ -1763,7 +1763,7 @@ codeunit 50000 "AP POS Print Utility"
                     cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
                 END;
                 if not recLTransactionHeader."Sale Is Return Sale" then
-                    if (recLTransactionHeader."Transaction Code Type" = recLTransactionHeader."Transaction Code Type"::SRC) or (recLTransactionHeader."Transaction Code Type" = recLTransactionHeader."Transaction Code Type"::PWD) then begin
+                    if (recLTransactionHeader."Transaction Code Type" = recLTransactionHeader."Transaction Code Type"::"SC") or (recLTransactionHeader."Transaction Code Type" = recLTransactionHeader."Transaction Code Type"::PWD) then begin
                         CLEAR(FieldValue);
                         DSTR1 := '#L#################################';
                         FieldValue[1] := 'Beginning Balance: ' + POSFunctions.FormatAmount(recLTransactionHeader."Beginning Balance");
@@ -2012,6 +2012,7 @@ codeunit 50000 "AP POS Print Utility"
         Value[1] := 'Receipt No#:';
         Value[2] := Format(Transaction."Receipt No.");
         Value[3] := Format(Transaction."Transaction Code Type");
+
         cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), false, true, false, false));
         cduSender.AddPrintLine(200, 5, NodeName, Value, DSTR1, false, true, false, false, Tray);
 
@@ -2272,7 +2273,7 @@ codeunit 50000 "AP POS Print Utility"
                         Value[1] := '';
                         DSTR1 := '#L################# #R###############   ';
                         Case Transaction."Transaction Code Type" of
-                            Transaction."Transaction Code Type"::SRC:
+                            Transaction."Transaction Code Type"::"SC":
                                 FieldValue[1] := 'Senior Discount';
                             Transaction."Transaction Code Type"::PWD:
                                 FieldValue[1] := 'PWD Discount';
@@ -2801,7 +2802,7 @@ codeunit 50000 "AP POS Print Utility"
                                         DiscountText := 'empl4';//Text084;
                                         if Transaction.Get(TransSalesEntry."Store No.", TransSalesEntry."POS Terminal No.", TransSalesEntry."Transaction No.") then begin
                                             case Transaction."Transaction Code Type" OF
-                                                Transaction."Transaction Code Type"::SRC:
+                                                Transaction."Transaction Code Type"::"SC":
                                                     DiscountText := 'Senior Discount';
                                                 Transaction."Transaction Code Type"::PWD:
                                                     DiscountText := 'PWD Discount';
@@ -4200,7 +4201,7 @@ codeunit 50000 "AP POS Print Utility"
                             if RecipeBufferDetailTEMP_l."Offer Type" = RecipeBufferDetailTEMP_l."Offer Type"::Line then begin
 
                                 case Transaction."Transaction Code Type" OF
-                                    Transaction."Transaction Code Type"::SRC:
+                                    Transaction."Transaction Code Type"::"SC":
                                         DiscountText := 'Senior Disc.';
                                     Transaction."Transaction Code Type"::PWD:
                                         DiscountText := 'PWD Disc.';
@@ -4288,7 +4289,7 @@ codeunit 50000 "AP POS Print Utility"
                                                     Transaction."Transaction Code Type"::VATW, Transaction."Transaction Code Type"::WHT1,
                                                     Transaction."Transaction Code Type"::ZRWH, Transaction."Transaction Code Type"::ZERO,
                                                     Transaction."Transaction Code Type"::ATHL, Transaction."Transaction Code Type"::SOLO,
-                                                    Transaction."Transaction Code Type"::SRC,
+                                                    Transaction."Transaction Code Type"::"SC",
                                                     Transaction."Transaction Code Type"::PWD, Transaction."Transaction Code Type"::ONLINE:
                                                     begin
                                                         cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR2), false, false, false, false));
@@ -4312,7 +4313,7 @@ codeunit 50000 "AP POS Print Utility"
                                                 Transaction."Transaction Code Type"::VATW, Transaction."Transaction Code Type"::WHT1,
                                                 Transaction."Transaction Code Type"::ZRWH, Transaction."Transaction Code Type"::ZERO,
                                                 Transaction."Transaction Code Type"::ATHL, Transaction."Transaction Code Type"::SOLO,
-                                                Transaction."Transaction Code Type"::SRC,
+                                                Transaction."Transaction Code Type"::"SC",
                                                 Transaction."Transaction Code Type"::PWD, Transaction."Transaction Code Type"::ONLINE:
                                                 begin
                                                     cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR2), false, false, false, false));
@@ -6301,7 +6302,7 @@ codeunit 50000 "AP POS Print Utility"
                             intLTotalNoOfBOI += 1;
                             decLTotalBOIAmount += recLTransaction."Gross Amount";
                         END;
-                    recLTransaction."Transaction Code Type"::SRC:
+                    recLTransaction."Transaction Code Type"::"SC":
                         BEGIN
                             intLTotalNoOfSRC += 1;
                             decLTotalSRCDisc += ROUND(recLTransaction."Discount Amount", 0.01);
@@ -6385,7 +6386,7 @@ codeunit 50000 "AP POS Print Utility"
         Value[1] := ' PWD';
         Value[2] := POSFunctions.FormatAmount(ROUND(decLTotalPWDDisc, 0.01));
         cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
-        Value[1] := ' SRC';
+        Value[1] := ' SC';
         Value[2] := POSFunctions.FormatAmount(ROUND(decLTotalSRCDisc, 0.01));
         cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
 

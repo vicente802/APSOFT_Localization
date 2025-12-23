@@ -133,7 +133,7 @@ codeunit 50007 "POSPostUtilityExt"
         end;
         if txtLCustomerType = 'SRC' then begin
             Transaction."Customer Type" := Transaction."Customer Type"::"Senior Citizen";
-            Transaction."Transaction Code Type" := Transaction."Transaction Code Type"::SRC;
+            Transaction."Transaction Code Type" := Transaction."Transaction Code Type"::"SC";
             Transaction."Beginning Balance" := POSTrans."Beginning Balance";
             Transaction."Current Balance" := POSTrans."Current Balance";
         end;
@@ -252,7 +252,7 @@ codeunit 50007 "POSPostUtilityExt"
     begin
         // Check if the transaction code type matches specific types
         if TransactionHeader_p."Transaction Code Type" in [
-            TransactionHeader_p."Transaction Code Type"::SRC,
+            TransactionHeader_p."Transaction Code Type"::"SC",
             TransactionHeader_p."Transaction Code Type"::PWD,
             TransactionHeader_p."Transaction Code Type"::SOLO,
             TransactionHeader_p."Transaction Code Type"::NAAC,
