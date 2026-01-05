@@ -930,9 +930,7 @@ codeunit 50002 "AP POS Transaction"
                     // if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) or
                     //         (POSTransaction."Transaction Code Type" = POSTransaction."Transaction Code Type"::REG) and
                     //         (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
-                    if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) and
-                         (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
-
+                    if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) and (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
                         if (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG) and
                             (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::NAAC) then begin
                             userask := POSGUI.PosConfirm('Do you want to reset the transaction code type and customer to change to NAAC', userask);
@@ -974,8 +972,7 @@ codeunit 50002 "AP POS Transaction"
                     // if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) or
                     //               (POSTransaction."Transaction Code Type" = POSTransaction."Transaction Code Type"::REG) and
                     //               (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
-                    if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) and
-                         (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
+                    if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) and (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
                         if (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG) and
                             (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::ATHL) then begin
                             userask := POSGUI.PosConfirm('Do you want to reset the transaction code type and customer to change to Athlete', userask);
@@ -1009,11 +1006,8 @@ codeunit 50002 "AP POS Transaction"
                     // if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) or
                     //        (POSTransaction."Transaction Code Type" = POSTransaction."Transaction Code Type"::REG) and
                     //        (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
-                    if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) and
-                       (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
-
-                        if (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG) and
-                             (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::WHT1) then begin
+                    if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) and (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
+                        if (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG) and (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::WHT1) then begin
                             userask := POSGUI.PosConfirm('Do you want to reset the transaction code type and customer to change to WHT', userask);
                         end;
                         if ((userask) and (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG)) or ((userask = false) and (POSTransaction."Transaction Code Type" = POSTransaction."Transaction Code Type"::REG)) then
@@ -1047,8 +1041,7 @@ codeunit 50002 "AP POS Transaction"
                     if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) and
                         (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
 
-                        if (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG) and
-                              (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::VATW) then begin
+                        if (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG) and (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::VATW) then begin
                             userask := POSGUI.PosConfirm('Do you want to reset the transaction code type and customer to change to VATWHT', userask);
                         end;
                         if ((userask) and (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG)) or ((userask = false) and (POSTransaction."Transaction Code Type" = POSTransaction."Transaction Code Type"::REG)) then
@@ -1079,11 +1072,8 @@ codeunit 50002 "AP POS Transaction"
                     // if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) or
                     //       (POSTransaction."Transaction Code Type" = POSTransaction."Transaction Code Type"::REG) and
                     //       (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
-                    if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) and
-                         (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
-
-                        if (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG) and
-                         (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::ZERO) then begin
+                    if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) and (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
+                        if (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG) and (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::ZERO) then begin
                             userask := POSGUI.PosConfirm('Do you want to reset the transaction code type and customer to change to Zero rated', userask);
                         end;
 
