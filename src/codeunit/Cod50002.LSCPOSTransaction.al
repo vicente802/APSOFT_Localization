@@ -1105,11 +1105,9 @@ codeunit 50002 "AP POS Transaction"
                     // if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) or
                     //            (POSTransaction."Transaction Code Type" = POSTransaction."Transaction Code Type"::REG) and
                     //            (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
-                    if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) and
-                       (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
+                    if (POSTransaction."Total Pressed" = false) or (POSTransaction."Line Discount" > 0) or (POSTransaction."Total Discount" > 0) and (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::DEPOSIT) then begin
 
-                        if (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG) and
-                              (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::ZRWH) then begin
+                        if (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG) and (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::ZRWH) then begin
                             userask := POSGUI.PosConfirm('Do you want to reset the transaction code type and customer to change to Zero rate WHT', userask);
                         end;
                         if ((userask) and (POSTransaction."Transaction Code Type" <> POSTransaction."Transaction Code Type"::REG)) or ((userask = false) and (POSTransaction."Transaction Code Type" = POSTransaction."Transaction Code Type"::REG)) then
@@ -1216,9 +1214,7 @@ codeunit 50002 "AP POS Transaction"
                                         end;
 
                                     case POSTransaction."Transaction Code Type" of
-                                        POSTransaction."Transaction Code Type"::"SRC", POSTransaction."Transaction Code Type"::PWD, POSTransaction."Transaction Code Type"::ONLINE,
-                                          POSTransaction."Transaction Code Type"::SOLO, POSTransaction."Transaction Code Type"::ATHL,
-                                           POSTransaction."Transaction Code Type"::MOV, POSTransaction."Transaction Code Type"::NAAC:
+                                        POSTransaction."Transaction Code Type"::"SRC", POSTransaction."Transaction Code Type"::PWD, POSTransaction."Transaction Code Type"::ONLINE, POSTransaction."Transaction Code Type"::SOLO, POSTransaction."Transaction Code Type"::ATHL, POSTransaction."Transaction Code Type"::MOV, POSTransaction."Transaction Code Type"::NAAC:
                                             begin
                                                 POSAddFunc.VATExemptPressed(POSTransaction."Receipt No.", POSTransaction);
                                             end;
