@@ -581,6 +581,12 @@ codeunit 50004 "LSC POS Additional Functions"
         EVALUATE(recEODLedger."Zero Rated Amount", parString[247]);
         EVALUATE(recEODLedger."Total Refund Amount", parString[248]);
         EVALUATE(recEODLedger."Total Return Amount", parString[249]);
+        EVALUATE(recEODLedger."Accumulated Reset Counter", parString[250]);
+        EvALUATE(recEODLedger."No. of Refunds", parString[251]);
+        EvALUATE(recEODLedger."Beg. Void", parString[252]);
+        EvALUATE(recEODLedger."End. Void", parString[253]);
+        EvALUATE(recEODLedger."Beg. Return", parString[254]);
+        EvALUATE(recEODLedger."End. Return", parString[255]);
 
         IF recEODLedger.INSERT(TRUE) THEN
             EXIT(TRUE);

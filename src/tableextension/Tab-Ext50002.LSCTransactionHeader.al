@@ -87,6 +87,19 @@ tableextension 50002 "LSCTransactionHeader" extends "LSC Transaction header"
         {
             DataClassification = CustomerContent;
         }
+        field(50020; "Return No. Series"; Code[20])
+        {
+            DataClassification = CustomerContent;
+        }
+        field(50021; "Post Void No. Series"; Code[20])
+        {
+            DataClassification = CustomerContent;
+        }
+        field(50022; "Refund Reason"; Option)
+        {
+            OptionMembers = " ","Defected","Outdated","Color","Size","Dissatisfied","Other Reason";
+            DataClassification = CustomerContent;
+        }
     }
 
     var

@@ -444,6 +444,11 @@ codeunit 50002 "AP POS Transaction"
         customer: Record Customer;
         BegBal: Decimal;
         Booklet: Code[30];
+
+        l_POSPrintUtility: Codeunit "AP POS Print Utility";
+        PageDialog: Page "ReprintZDialog";
+        StartDate: Date;
+        EndDate: Date;
     begin
         if POSMenuLine.Command = 'QTY' then begin
             if GetOpenEOD() then begin
@@ -481,6 +486,18 @@ codeunit 50002 "AP POS Transaction"
                 isHandled := true;
                 EXIT;
             end;
+        end;
+        if POSMenuLine.Command = 'REASON' then begin
+
+        end;
+        if POSMenuline.Command = 'REPRINT-Z' then begin
+            IF PageDialog.RunModal = Action::OK THEN BEGIN
+                StartDate := PageDialog.GetStartDate;
+                EndDate := PageDialog.GetEndDate;
+
+                l_POSPrintUtility.ReprintZ(StartDate, EndDate);
+                // Message('%1 %2', StartDate, EndDate);
+            END;
         end;
         if POSMenuline.Command = 'PRINT_Z' then begin
             if not Checkifwithsuspendtrans(POSSESSION.StoreNo()) then begin
@@ -6061,6 +6078,18 @@ codeunit 50002 "AP POS Transaction"
                     recLEligibilityLedger.Insert(true);
                 end;
         END;
+    end;
+
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"LSC POS Transaction Events", OnProcessOtherInfoTrigger, '', false, false)]
+    local procedure "LSC POS Transaction Events_OnProcessOtherInfoTrigger"(SubInfo: Record "LSC Information Subcode"; Info: Record "LSC Infocode"; var POSTr: Record "LSC POS Transaction"; POSTerminal: Record "LSC POS Terminal"; CurrInput: Text; var isHandled: Boolean)
+    var
+        IntCurrInput: Integer;
+    begin
+        // POSTransactionHeader.Get(POSTr."Receipt No."); 
+        EVALUATE(IntCurrInput, CurrInput);
+        POSTr."Refund Reason" := IntCurrInput;
+        POSTr.MODIFY;
+        // POSTransactionHeader."Refund Reason" := IntCurrInput;
     end;
 
     var

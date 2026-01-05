@@ -60,5 +60,9 @@ tableextension 50001 "LSCPOSTerminalExt" extends "LSC POS Terminal"
         {
             DataClassification = CustomerContent;
         }
+        field(50016; "Accumulated Reset Counter"; Integer)
+        {
+            DataClassification = CustomerContent;
+        }
     }
 }
