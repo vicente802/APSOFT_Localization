@@ -4,7 +4,7 @@ page 50007 POSCommandAdd
     Caption = 'POSCommandAdd';
     PageType = List;
     SourceTable = "LSC POS Command";
-    
+
     layout
     {
         area(Content)
