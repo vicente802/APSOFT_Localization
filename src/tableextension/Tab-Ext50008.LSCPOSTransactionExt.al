@@ -138,6 +138,11 @@ tableextension 50008 "LSCPOSTransactionExt" extends "LSC POS Transaction"
         {
             DataClassification = CustomerContent;
         }
+        field(50032; "Refund Reason"; Option)
+        {
+            OptionMembers = " ","Defected","Outdated","Color","Size","Dissatisfied","Other Reason";
+            DataClassification = CustomerContent;
+        }
     }
 
     var

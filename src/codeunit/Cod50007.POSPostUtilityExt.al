@@ -69,11 +69,13 @@ codeunit 50007 "POSPostUtilityExt"
         txtLCustomerType: Text[50];
         intLLength: Integer;
         recLPOSTerminal2: Record "LSC POS Terminal";
-        recLTH, Transaction2 : Record "LSC Transaction Header";
+        recLTH, Transaction2, TransHeaderNoSeries : Record "LSC Transaction Header";
         recCus: Record "Customer";
         Globals: Codeunit "LSC POS Session";
         APPOSSESSION: Record "AP POSSESSIONS";
         DepositSlip: Code[20];
+        decLPostVoidSeries: Text[12];
+        decLReturnSeries: Text[12];
     begin
         //Evaluate(Transaction."Transaction Code Type", Format(POSTrans."Transaction Code Type"));
 
@@ -207,12 +209,42 @@ codeunit 50007 "POSPostUtilityExt"
             APPOSSESSION.Insert();
         end;
         POSSESSION.ClearManagerID();
-        if Transaction."Sale Is Return Sale" then begin
-            Transaction2.Reset();
-            Transaction2.SetRange("Receipt No.", Transaction."Retrieved from Receipt No.");
-            if Transaction2.FindFirst() then
+        // POST VOID
+        IF Transaction."Transaction Type" = Transaction."Transaction Type"::Sales THEN BEGIN
+            if (Transaction."Sale Is Return Sale") AND (Transaction."Retrieved from Receipt No." <> '') AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::DEPOSIT) then begin
+                Transaction2.Reset();
+                Transaction2.SetRange("Receipt No.", Transaction."Retrieved from Receipt No.");
+                if Transaction2.FindFirst() then begin
+                    Transaction."Transaction Code Type" := Transaction2."Transaction Code Type";
+                    // MARCUS 20251230
+                    TransHeaderNoSeries.SetCurrentKey("Post Void No. Series");
+                    TransHeaderNoSeries.SetFilter("Post Void No. Series", '<>%1', '');
+                    IF TransHeaderNoSeries.FINDLAST THEN BEGIN
+                        decLPostVoidSeries := TransHeaderNoSeries."Post Void No. Series";
+                    END ELSE BEGIN
+                        decLPostVoidSeries := '000000000000';
+                    END;
+
+                    Transaction2."Post Void No. Series" := POSFunc.ZeroPad(INCSTR(decLPostVoidSeries), 12);
+                    Transaction2.MODIFY;
+                end;
+            end;
+            // Return
+            if (Transaction."Sale Is Return Sale") AND (Transaction."Retrieved from Receipt No." = '') AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::DEPOSIT) then begin
                 Transaction."Transaction Code Type" := Transaction2."Transaction Code Type";
-        end;
+                TransHeaderNoSeries.SetCurrentKey("Return No. Series");
+                TransHeaderNoSeries.SetFilter("Return No. Series", '<>%1', '');
+                IF TransHeaderNoSeries.FINDLAST THEN BEGIN
+                    decLReturnSeries := TransHeaderNoSeries."Return No. Series";
+                END ELSE BEGIN
+                    decLReturnSeries := '000000000000';
+                END;
+
+                Transaction."Refund Reason" := POSTrans."Refund Reason";
+
+                Transaction."Return No. Series" := POSFunc.ZeroPad(INCSTR(decLReturnSeries), 12);
+            end;
+        END;
     end;
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"LSC POS Post Utility", 'SalesEntryOnBeforeInsertV2', '', true, true)]
