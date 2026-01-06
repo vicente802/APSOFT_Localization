@@ -2301,7 +2301,7 @@ codeunit 50000 "AP POS Print Utility"
 
             if PeriodicDiscountInfoTEMP.FindSet then begin
                 DSTR1 := '#L################# #R###############   ';
-                FieldValue[1] := Text042 + ' ' + Globals.GetValue('CURRSYM');
+                FieldValue[1] := Text042 + '1 ' + Globals.GetValue('CURRSYM');
                 FieldValue[2] := POSFunctions.FormatAmount(-Subtotal + TipsAmount1 + TipsAmount2);
                 cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), false, false, false, false));
                 AddPrintLine(800, 2, NodeName, FieldValue, DSTR1, false, false, false, false, Tray);
@@ -4000,10 +4000,10 @@ codeunit 50000 "AP POS Print Utility"
                                     recLVATAmountTemp.INIT();
                                     recLVATAmountTemp."No." := SalesEntry."VAT Code";
                                     recLVATAmountTemp."Unit Price" := SalesEntry."VAT Amount";
-                                    if SalesEntry."VAT Code" = 'VE' then begin
-                                        recLVATAmountTemp."Unit Price Incl. VAT" := SalesEntry."Net Amount";//- SalesEntry."Total Discount";
+                                    if SalesEntry."VAT Code" = 'VE' then begin//VINCENT20260106
+                                        recLVATAmountTemp."Unit Price Incl. VAT" := -SalesEntry."Net Amount" + SalesEntry."Discount Amount";//- SalesEntry."Total Discount";
                                     end else begin
-                                        recLVATAmountTemp."Unit Price Incl. VAT" := SalesEntry."Net Amount";
+                                        recLVATAmountTemp."Unit Price Incl. VAT" := (-SalesEntry."Net Amount" + SalesEntry."Discount Amount") + SalesEntry."VAT Amount";
                                     end;
                                     recLVATAmountTemp.INSERT();
                                 END ELSE BEGIN
@@ -4170,9 +4170,12 @@ codeunit 50000 "AP POS Print Utility"
                         FieldValue[1] := FieldValue[1] + ' ' + LowerCase(RecipeBufferTEMP."Unit of Measure");
                     NodeName[1] := 'x';
                     if Globals.UseSalesTax and LocalizationExt.IsNALocalizationEnabled then
-                        FieldValue[2] := POSFunctions.FormatAmount(-(RecipeBufferTEMP."Net Amount" + DiscountOnLine))
+                        FieldValue[2] := POSFunctions.FormatAmount(-(RecipeBufferTEMP."Net Amount" + DiscountOnLine))//VINCENT20260106
                     else
-                        FieldValue[2] := POSFunctions.FormatAmount(-(RecipeBufferTEMP."Net Amount" + RecipeBufferTEMP."VAT Amount" + DiscountOnLine));
+                        If (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::REG) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::"Regular Customer") then begin
+                            FieldValue[2] := POSFunctions.FormatAmount(-(RecipeBufferTEMP."Net Amount" + DiscountOnLine));
+                        end else
+                            FieldValue[2] := POSFunctions.FormatAmount(-(RecipeBufferTEMP."Net Amount" + RecipeBufferTEMP."VAT Amount"));
                     NodeName[2] := 'Amount';
                     if Globals.UseSalesTax and LocalizationExt.IsNALocalizationEnabled then begin
                         if RecipeBufferTEMP."VAT Amount" <> 0 then begin
@@ -4638,7 +4641,7 @@ codeunit 50000 "AP POS Print Utility"
         CLEAR(decLVATAmount);
         VATSetup.RESET;
         IF VATSetup.FINDFIRST THEN
-            REPEAT
+            REPEAT //VINCENT20260106
                 IF (VATSetup."VAT Code" = 'VE') THEN BEGIN
                     FieldValue[1] := 'VAT Amount';
                     FieldValue[2] := POSFunctions.FormatAmount((ROUND(decLVATAmount * -1, 0.01, '=')));
@@ -4653,7 +4656,7 @@ codeunit 50000 "AP POS Print Utility"
                     IF Transaction."Sale Is Return Sale" THEN BEGIN
                         FieldValue[2] := POSFunctions.FormatAmount(-ROUND(recLVATAmountTemp."Unit Price Incl. VAT", 0.01, '='));
                     END ELSE
-                        FieldValue[2] := POSFunctions.FormatAmount((ROUND(recLVATAmountTemp."Unit Price Incl. VAT" * -1, 0.01, '=')));
+                        FieldValue[2] := POSFunctions.FormatAmount((ROUND(recLVATAmountTemp."Unit Price Incl. VAT", 0.01, '=')));
                     FieldValue[3] := POSFunctions.FormatAmount(ABS(ROUND(recLVATAmountTemp."Unit Price", 0.01, '='))); //VAT Amount
                     // IF STRLEN(FieldValue[2]) > 9 THEN
                     //     DSTR1 := '#L################ #N#############';
