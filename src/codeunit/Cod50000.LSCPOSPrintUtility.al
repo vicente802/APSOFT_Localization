@@ -2301,7 +2301,7 @@ codeunit 50000 "AP POS Print Utility"
 
             if PeriodicDiscountInfoTEMP.FindSet then begin
                 DSTR1 := '#L################# #R###############   ';
-                FieldValue[1] := Text042 + '1 ' + Globals.GetValue('CURRSYM');
+                FieldValue[1] := Text042 + '1 ' + Globals.GetValue('CURRSYM'); //VINCENT20260106
                 FieldValue[2] := POSFunctions.FormatAmount(-Subtotal + TipsAmount1 + TipsAmount2);
                 cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), false, false, false, false));
                 AddPrintLine(800, 2, NodeName, FieldValue, DSTR1, false, false, false, false, Tray);
@@ -2349,7 +2349,7 @@ codeunit 50000 "AP POS Print Utility"
                     PrintTransTaxInfo(Transaction, Tray, RightIndent);
 
                 DSTR1 := '#L################# #R###############   ';
-                FieldValue[1] := Text005 + ' ' + Globals.GetValue('CURRSYM');
+                FieldValue[1] := Text005 + '2 ' + Globals.GetValue('CURRSYM');//VINCENT20260106
 
                 if Globals.UseSalesTax and LocalizationExt.IsNALocalizationEnabled then
                     FieldValue[2] := POSFunctions.FormatAmount(Total + TipsAmount1 + TipsAmount2)
@@ -4507,7 +4507,7 @@ codeunit 50000 "AP POS Print Utility"
                         TotalAmt := TotalAmt + IncExpEntry."Net Amount"
                     else
                         TotalAmt := TotalAmt + IncExpEntry.Amount;
-
+                    Message('%1', IncExpEntry."Net Amount");//VINCENT20260106
                     if Globals.UseSalesTax and LocalizationExt.IsNALocalizationEnabled then
                         Subtotal := Subtotal + IncExpEntry."Net Amount"
                     else
