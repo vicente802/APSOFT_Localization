@@ -341,34 +341,39 @@ codeunit 50002 "AP POS Transaction"
         // Step 1: Load all POS lines into a temporary table grouped by Item No. and Location Code
 
         POSLine.SetRange(Number, POSTransLine.Number);
-        if POSLine.FindSet() then
+        if POSLine.FindSet() then begin
             repeat
-                // if POSLine."Barcode No." <> '' then begin
-                //     if Barcode.Get(POSLine."Barcode No.") then
-                //         if Barcode."Discount %" <> 0 then begin
-                //             PosPriceUtility.InsertTransDiscPercent(POSLine, Barcode."Discount %", POSTransPeriodicDisc.DiscType::Line, '');
-                //             POSLine.CalcPrices;
-                //         end;
-                // end;
                 TempPOSLine.SetRange("Barcode No.", POSLine."Barcode No.");
                 TempPOSLine.SetRange("Receipt No.", POSLine."Receipt No.");
+                TempPOSLine.SetRange("Entry Status", POSLine."Entry Status");
                 if TempPOSLine.FindFirst() then begin
-                    //TempPOSLine := POSLine;
-                    TempPOSLine.Number := POSLine.Number;
-                    TempPOSLine.Quantity += POSLine.Quantity;
-                    TempPOSLine.Amount += POSLine.Price;
+                    IF TempPOSLine."Entry Status" = TempPOSLine."Entry Status"::" " THEN BEGIN
+                        TempPOSLine.Number := POSLine.Number;
+                        TempPOSLine.Quantity += POSLine.Quantity;
+                        TempPOSLine.Amount += POSLine.Price;
 
-                    TempPOSLine."Unit of Measure" := '';
-                    if TempPOSLine.Modify() then;
+                        TempPOSLine."Unit of Measure" := '';
+                        if TempPOSLine.Modify() then;
+                    END ELSE BEGIN
+                        TempPOSLine := POSLine;
+                        TempPOSLine."Unit of Measure" := '';
+                        TempPOSLine.Insert();
+                    END;
                 end else begin
                     TempPOSLine := POSLine;
                     TempPOSLine."Unit of Measure" := '';
                     TempPOSLine.Insert();
                 end;
             until POSLine.Next() = 0;
+        end else begin
+            TempPOSLine := POSLine;
+            TempPOSLine."Unit of Measure" := '';
+            TempPOSLine.Insert();
+        end;
 
         // Step 2: Replace original records with compressed ones
         POSLine.DeleteAll();
+        TempPOSLine.RESET;
         if TempPOSLine.FindSet() then
             repeat
                 CompressedPOSLine := TempPOSLine;
