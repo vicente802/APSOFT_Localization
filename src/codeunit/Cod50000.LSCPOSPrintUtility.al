@@ -5590,6 +5590,49 @@ codeunit 50000 "AP POS Print Utility"
         TotalVatDetails: Decimal;
         l_ResetCtrCode: Text[4];
         Text116: Label 'Z-Reading Counter: ';
+        CashTransactionTotal: Integer;
+        CashTransactionAmtTotal: Decimal;
+        TotalTenderAmtTotal: Decimal;
+        FloatEntryTotal: Decimal;
+        RemoveTenderTotal: Decimal;
+        GrossSalesAmtTotal: Decimal;
+        LineDiscAmtTotal: Decimal;
+        AthlDiscTotal: Decimal;
+        SoloParentDiscTotal: Decimal;
+        PWDDiscTotal: Decimal;
+        SCDiscTotal: Decimal;
+        TotalDisc: Decimal;
+        TotalNetSales: Decimal;
+        ZeroRatedAmtTotal: Decimal;
+        VatableSalesTotal: Decimal;
+        VatAmtTotal: Decimal;
+        VatExemptSalesTotal: Decimal;
+        ZeroRatedSalesTotal: Decimal;
+        NoOfPayingCustomersTotal: Integer;
+        NoOfTransactionsTotal: Integer;
+        ItemSoldTotal: Integer;
+        NoOfRefundTotal: Integer;
+        TotalRefundAmt: Decimal;
+        NoOfReturnTotal: Integer;
+        TotalReturnAmt: Decimal;
+        NoOfSuspendedTotal: Integer;
+        NoOfVoidedLineTotal: Integer;
+        TotalVoidedLineAmt: Decimal;
+        NoOfVoidedTransTotal: Integer;
+        NoOfTrainingTotal: Integer;
+        NoOfOpenDrawerTotal: Integer;
+        CodBegInvNo: Code[20];
+        DecOldAccumulated: Decimal;
+        CodLBegPostVoidSeries: Code[20];
+        CodLBegReturnSeries: Code[20];
+        CodEnvInvNo: Code[20];
+        DecNewAccumulated: Decimal;
+        ZReportIDFrom: Code[20];
+        ZReportIDTo: Code[20];
+        CodLEndPostVoidSeries: Code[20];
+        CodLEndReturnSeries: Code[20];
+        IntBegAccumResetCtr: Integer;
+        IntEndAccumResetCtr: Integer;
     begin
         gTimeStart := Format(Time());
 
@@ -5613,18 +5656,62 @@ codeunit 50000 "AP POS Print Utility"
         recEODLEdgerEntry.SetCurrentKey("Store No.", "POS Terminal No.", Date);
         recEODLedgerEntry.SetRange("Store No.", Globals.StoreNo);
         recEODLedgerEntry.SetRange("POS Terminal No.", Globals.TerminalNo);
+        // Dapat kahit hindi existing 
         recEODLedgerEntry.SetFilter(Date, '%1..%2', StartDate, EndDate);
 
         IF recEODLedgerEntry.FindFirst THEN BEGIN
+            IF recEODLedgerEntry.FINDFIRST THEN BEGIN
+                CodBegInvNo := recEODLedgerEntry."Beginning Invoice No.";
+                DecOldAccumulated := recEODLedgerEntry."Old Accumulated Sales";
+                ZReportIDFrom := recEODLedgerEntry."Z-Report ID";
+                CodLBegPostVoidSeries := recEODLedgerEntry."Beg. Void";
+                CodLBegReturnSeries := recEODLedgerEntry."Beg. Return";
+                IntBegAccumResetCtr := recEODLedgerEntry."Accumulated Reset Counter";
+            END;
+
+            IF recEODLedgerEntry.FINDLAST THEN BEGIN
+                CodEnvInvNo := recEODLedgerEntry."Ending Invoice No.";
+                DecNewAccumulated := recEODLedgerEntry."New Accumulated Sales";
+                ZReportIDTo := recEODLedgerEntry."Z-Report ID";
+                CodLEndPostVoidSeries := recEODLedgerEntry."End. Void";
+                CodLEndReturnSeries := recEODLedgerEntry."End. Return";
+                IntEndAccumResetCtr := recEODLedgerEntry."Accumulated Reset Counter";
+            END;
+
+            SCode := POSFunctions.GetStatementCode;
+
+            PrintLogo(2);
+            cduSender.PrintHeader(Transaction, false, 2);
+
             IF StartDate <> EndDate THEN BEGIN
+                // Trans Date
+                DSTR1 := '#L###############################';
+                Value[1] := 'Trans. Date: ' + FORMAT(StartDate) + ' to ' + FORMAT(EndDate);
+                cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
 
+                DSTR1 := '#L########### #T###### #T#######';
+                Value[1] := 'Printed Date:';
+                Value[2] := FORMAT(TODAY());
+                Value[3] := Format(Time, 8, '<Hours24,2>:<Minutes,2>:<Seconds,2>');// FORMAT(TIME(), 5);
+                cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
+
+                // Staff
+                DSTR1 := '#L###################################### ';
+                Value[1] := Text051 + ':';
+                IF Staff."Name on Receipt" <> '' THEN
+                    Value[1] := Value[1] + ' ' + Staff."Name on Receipt"
+                ELSE
+                    Value[1] := Value[1] + ' ' + Globals.StaffID;
+
+                gStaffName := Value[2];
+
+                Value[1] := Value[1] + ' POS: ' + FORMAT(Terminal."No.");
+
+                Value[1] := Value[1] + ' Store #: ' + Globals.StoreNo();
+
+                cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
+                PrintSeperator(2);
             END ELSE BEGIN
-                // Start Line 8591 
-                SCode := POSFunctions.GetStatementCode;
-
-                PrintLogo(2);
-                cduSender.PrintHeader(Transaction, false, 2);
-
                 DSTR1 := '#L########### #T###### #T### #T####### ';
                 Value[1] := 'Trans. Date:';
                 Value[2] := FORMAT(recEODLedgerEntry.Date);
@@ -5652,41 +5739,75 @@ codeunit 50000 "AP POS Print Utility"
 
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), false, true, false, false));
                 PrintSeperator(2);
+            END;
 
-                DSTR1 := '#C######################';
-                Value[1] := 'Z-REPORT (REPRINT)';
-                cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), true, true, true, false));
-                cduSender.AddPrintLine(200, 2, NodeName, Value, DSTR1, false, true, false, false, 2);
-                PrintSeperator(2);
-
-                IF recEODLedgerEntry."No. of Cash Transaction" <> 0 THEN BEGIN
-                    DSTR1 := '#L############ #R## #R##################';
-                    Value[1] := 'Cash';
-                    Value[2] := POSFunctions.FormatQty(recEODLedgerEntry."No. of Cash Transaction");
-                    Value[3] := POSFunctions.FormatAmount(ABS(recEODLedgerEntry."Cash Transaction Amount"));
-                    cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
-                END;
-                // Total Tender Amount
+            DSTR1 := '#C######################';
+            Value[1] := 'Z-REPORT (REPRINT)';
+            cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), true, true, true, false));
+            cduSender.AddPrintLine(200, 2, NodeName, Value, DSTR1, false, true, false, false, 2);
+            PrintSeperator(2);
+            IF recEODLedgerEntry.FINDFIRST THEN BEGIN
+                REPEAT
+                    CashTransactionTotal += recEODLedgerEntry."No. of Cash Transaction";
+                    CashTransactionAmtTotal += recEODLedgerEntry."Cash Transaction Amount";
+                    TotalTenderAmtTotal += recEODLedgerEntry."Total Tender Amount";
+                    FloatEntryTotal += recEODLedgerEntry."Float Entry";
+                    RemoveTenderTotal += recEODLedgerEntry."Remove Tender";
+                    GrossSalesAmtTotal += recEODLedgerEntry."Gross Sales Amount";
+                    LineDiscAmtTotal += recEODLedgerEntry."Line Discount Amount";
+                    AthlDiscTotal += recEODLedgerEntry."Athl Discount";
+                    SoloParentDiscTotal += recEODLedgerEntry."Solo Parent Discount";
+                    PWDDiscTotal += recEODLedgerEntry."PWD Discount";
+                    SCDiscTotal += recEODLedgerEntry."Senior Citizen Discount";
+                    TotalDisc += recEODLedgerEntry."Total Discount Amount";
+                    TotalNetSales += recEODLedgerEntry."Total Net Sales";
+                    ZeroRatedAmtTotal += recEODLedgerEntry."Zero Rated Amount";
+                    VatableSalesTotal += recEODLedgerEntry."Vatable Sales";
+                    VatAmtTotal += recEODLedgerEntry."Total VAT Amount";
+                    VatExemptSalesTotal += recEODLedgerEntry."VAT Exempt Sales";
+                    ZeroRatedSalesTotal += recEODLedgerEntry."Zero Rated Sales";
+                    TotalVatDetails += (Abs(recEODLedgerEntry."Vatable Sales") + Abs(recEODLedgerEntry."VAT Exempt Sales") + Abs(recEODLedgerEntry."Zero Rated Amount") + Abs(recEODLedgerEntry."Total VAT Amount") + Abs(recEODLedgerEntry."Zero Rated Sales"));
+                    NoOfPayingCustomersTotal += recEODLedgerEntry."No. of Paying Customers";
+                    NoOfTransactionsTotal += recEODLedgerEntry."No. of Transactions";
+                    ItemSoldTotal += recEODLedgerEntry."No. of Item Sold";
+                    NoOfRefundTotal += recEODLedgerEntry."No. of Refunds";
+                    TotalRefundAmt += recEODLedgerEntry."Total Refund Amount";
+                    NoOfReturnTotal += recEODLedgerEntry."No. of Returns";
+                    TotalReturnAmt += recEODLedgerEntry."Total Return Amount";
+                    NoOfSuspendedTotal += recEODLedgerEntry."No. of Suspended";
+                    NoOfVoidedLineTotal += recEODLedgerEntry."No. of Voided Line";
+                    TotalVoidedLineAmt += recEODLedgerEntry."Total Voided Line Amount";
+                    NoOfVoidedTransTotal += recEODLedgerEntry."No. of Voided Transaction";
+                    NoOfTrainingTotal += recEODLedgerEntry."No. of Training";
+                    NoOfOpenDrawerTotal += recEODLedgerEntry."No. of Open Drawer";
+                UNTIL recEODLedgerEntry.Next() = 0;
+                // Cash =
+                DSTR1 := '#L############ #R## #R##################';
+                Value[1] := 'Cash';
+                Value[2] := POSFunctions.FormatQty(CashTransactionTotal);
+                Value[3] := POSFunctions.FormatAmount(ABS(CashTransactionAmtTotal));
+                cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
+                // Total Tender Amount =
                 PrintSeperator(2);
                 DSTR1 := '#L########          #R##################';
                 Value[1] := Text005 + ':';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Total Tender Amount");
+                Value[2] := POSFunctions.FormatAmount(TotalTenderAmtTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 PrintSeperator(2);
-                // Float Entry
+                // Float Entry =
                 DSTR1 := '#L##############    #R##################';
                 Value[1] := Text009 + ':';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Float Entry");
+                Value[2] := POSFunctions.FormatAmount(FloatEntryTotal);
                 cduSender.PrintLine(2, FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, FALSE, FALSE, FALSE));
-                // Remove Tender
+                // Remove Tender =
                 DSTR1 := '#L##############    #R##################';
                 Value[1] := Text010 + ':';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Remove Tender");
+                Value[2] := POSFunctions.FormatAmount(RemoveTenderTotal);
                 cduSender.PrintLine(2, FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, FALSE, FALSE, FALSE));
                 PrintSeperator(2);
-                // Gross Sales
+                // Gross Sales 
                 DSTR1 := '#L############### #R####################'; // #L##################### #R##############
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Gross Sales Amount");
+                Value[2] := POSFunctions.FormatAmount(GrossSalesAmtTotal);
                 Value[1] := Text011;
                 cduSender.PrintLine(2, FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, FALSE, FALSE, FALSE));
                 // Discounts
@@ -5696,61 +5817,60 @@ codeunit 50000 "AP POS Print Utility"
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // Line disc./Total disc.   
                 Value[1] := ' Line disc./Total disc.';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Line Discount Amount");
+                Value[2] := POSFunctions.FormatAmount(LineDiscAmtTotal);
                 DSTR1 := '#L#################### #R###############';
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // NAAC
                 Value[1] := ' NAAC'; //VINCENT20251211
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Athl Discount");
+                Value[2] := POSFunctions.FormatAmount(AthlDiscTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // SOLO
                 Value[1] := ' SOLO';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Solo Parent Discount");
+                Value[2] := POSFunctions.FormatAmount(SoloParentDiscTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // PWD
                 Value[1] := ' PWD';
-                Value[2] := POSFunctions.FormatAmount(ROUND(recEODLedgerEntry."PWD Discount", 0.01));
+                Value[2] := POSFunctions.FormatAmount(ROUND(PWDDiscTotal, 0.01));
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // SC
                 Value[1] := ' SC';
-                Value[2] := POSFunctions.FormatAmount(ROUND(recEODLedgerEntry."Senior Citizen Discount", 0.01));
+                Value[2] := POSFunctions.FormatAmount(ROUND(SCDiscTotal, 0.01));
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // Total Discount
                 Value[1] := ' Total Discount';
-                Value[2] := POSFunctions.FormatAmount(ABS(recEODLedgerEntry."Total Discount Amount"));
+                Value[2] := POSFunctions.FormatAmount(ABS(TotalDisc));
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, FALSE, FALSE, FALSE));
                 PrintSeperator(2);
                 // Total net Sales
                 DSTR1 := '#L################ #R###################';
                 Value[1] := 'Total Net Sales';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Total Net Sales");
+                Value[2] := POSFunctions.FormatAmount(TotalNetSales);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 PrintSeperator(2);
                 // Zero Rated Amount
                 DSTR1 := '#L################ #R###################';
                 Value[1] := 'Zero-rated Amount';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Zero Rated Amount");
+                Value[2] := POSFunctions.FormatAmount(ZeroRatedAmtTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 PrintSeperator(2);
                 // Vatable Sales
                 Value[1] := 'Vatable Sales';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Vatable Sales");
+                Value[2] := POSFunctions.FormatAmount(VatableSalesTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // VAT Amount
                 Value[1] := 'VAT Amount';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Total VAT Amount");
+                Value[2] := POSFunctions.FormatAmount(VatAmtTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // VAT Exempt Sales
                 Value[1] := 'VAT Exempt Sales';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."VAT Exempt Sales");
+                Value[2] := POSFunctions.FormatAmount(VatExemptSalesTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // Zero Rated Sales
-                Value[1] := 'VAT Exempt Sales';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Zero Rated Sales");
+                Value[1] := 'Zero-rated Sales';
+                Value[2] := POSFunctions.FormatAmount(ZeroRatedSalesTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 PrintSeperator(2);
                 // Total
-                TotalVatDetails := Abs(recEODLedgerEntry."Vatable Sales") + Abs(recEODLedgerEntry."VAT Exempt Sales") + Abs(recEODLedgerEntry."Zero Rated Amount") + Abs(recEODLedgerEntry."Total VAT Amount") + Abs(recEODLedgerEntry."Zero Rated Sales");
                 Value[1] := Text005;
                 Value[2] := POSFunctions.FormatAmount(TotalVatDetails);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
@@ -5758,101 +5878,130 @@ codeunit 50000 "AP POS Print Utility"
                 DSTR1 := '#L#################### #R###############';
                 // No. of Paying Customer
                 Value[1] := 'No. of Paying Customer';
-                Value[2] := FORMAT(recEODLedgerEntry."No. of Paying Customers");
+                Value[2] := FORMAT(NoOfPayingCustomersTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // No. of Transactions
                 Value[1] := 'No. of Transactions';
-                Value[2] := FORMAT(recEODLedgerEntry."No. of Transactions");
+                Value[2] := FORMAT(NoOfTransactionsTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // Items Sold
                 Value[1] := 'Items Sold';
-                Value[2] := FORMAT(recEODLedgerEntry."No. of Item Sold");
+                Value[2] := FORMAT(ItemSoldTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // No. of Refunds
                 Value[1] := 'No. of Refunds'; // Text030
-                Value[2] := FORMAT(recEODLedgerEntry."No. of Refunds");
+                Value[2] := FORMAT(NoOfRefundTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // Total Refund Amount
                 Value[1] := 'Total Refund Amt';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Total Refund Amount");
+                Value[2] := POSFunctions.FormatAmount(TotalRefundAmt);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // No. of Returns
                 Value[1] := 'No. of Returns';
-                Value[2] := FORMAT(recEODLedgerEntry."No. of Returns");
+                Value[2] := FORMAT(NoOfReturnTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // Total Return Amount
                 Value[1] := 'Total Return Amt';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Total Return Amount");
+                Value[2] := POSFunctions.FormatAmount(TotalReturnAmt);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // No. of Suspended
                 Value[1] := 'No. of Suspended';
-                Value[2] := FORMAT(recEODLedgerEntry."No. of Suspended");
+                Value[2] := FORMAT(NoOfSuspendedTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // No. of Voided Line
                 Value[1] := 'No. of Voided Line';
-                Value[2] := FORMAT(recEODLedgerEntry."No. of Voided Line");
+                Value[2] := FORMAT(NoOfVoidedLineTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // Total Voided Line
                 Value[1] := 'Total Voided Line';
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Total Voided Line Amount");
+                Value[2] := POSFunctions.FormatAmount(TotalVoidedLineAmt);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // No. of Voided Trans
                 Value[1] := 'No. of Voided Trans';
-                Value[2] := FORMAT(recEODLedgerEntry."No. of Voided Transaction");
+                Value[2] := FORMAT(NoOfVoidedTransTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // No. of Traning
                 Value[1] := 'No. of Training';
-                Value[2] := FORMAT(recEODLedgerEntry."No. of Training");
+                Value[2] := FORMAT(NoOfTrainingTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
-                // No. of Open Drawer
+                // No. of Open Drawer =
                 Value[1] := 'No. of Open Drawer';
-                Value[2] := FORMAT(recEODLedgerEntry."No. of Open Drawer");
+                Value[2] := FORMAT(NoOfOpenDrawerTotal);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // Beginning Invoice No
                 Value[1] := 'Beg. SI #:';
-                Value[2] := FORMAT(recEODLedgerEntry."Beginning Invoice No.");
+                CodBegInvNo := CheckIfNoSeriesIsEmpty(CodBegInvNo);
+                Value[2] := FORMAT(CodBegInvNo);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // Ending Invoice No
                 Value[1] := 'End. SI #:';
-                Value[2] := FORMAT(recEODLedgerEntry."Ending Invoice No.");
+                CodEnvInvNo := CheckIfNoSeriesIsEmpty(CodEnvInvNo);
+                Value[2] := FORMAT(CodEnvInvNo);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // Return Series    
                 Value[1] := 'Beg. VOID #: ';
-                Value[2] := FORMAT(recEODLedgerEntry."Beg. Void");
+                CodLBegPostVoidSeries := CheckIfNoSeriesIsEmpty(CodLBegPostVoidSeries);
+                Value[2] := FORMAT(CodLBegPostVoidSeries);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 Value[1] := 'End. VOID #:';
-                Value[2] := FORMAT(recEODLedgerEntry."End. Void");
+                CodLEndPostVoidSeries := CheckIfNoSeriesIsEmpty(CodLEndPostVoidSeries);
+                Value[2] := FORMAT(CodLEndPostVoidSeries);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // Void Series
                 Value[1] := 'Beg. RETURN #:';
-                Value[2] := FORMAT(recEODLedgerEntry."Beg. Return");
+                CodLBegReturnSeries := CheckIfNoSeriesIsEmpty(CodLBegReturnSeries);
+                Value[2] := FORMAT(CodLBegReturnSeries);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 Value[1] := 'End. RETURN #:';
-                Value[2] := FORMAT(recEODLedgerEntry."End. Return");
+                CodLEndReturnSeries := CheckIfNoSeriesIsEmpty(CodLEndReturnSeries);
+                Value[2] := FORMAT(CodLEndReturnSeries);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // Old Accumulated Sales
                 DSTR1 := '#L################### #R################';
                 Value[1] := Text63000;
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."Old Accumulated Sales");
+                Value[2] := POSFunctions.FormatAmount(DecOldAccumulated);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // New Accumulated Sales
                 Value[1] := Text63001;
-                Value[2] := POSFunctions.FormatAmount(recEODLedgerEntry."New Accumulated Sales");
+                Value[2] := POSFunctions.FormatAmount(DecNewAccumulated);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 // Reset Counter
                 Value[1] := 'Reset Counter';
-                l_ResetCtrCode := '0000';
-                l_ResetCtrCode := CopyStr(l_ResetCtrCode, 1, (4 - Strlen(FORMAT(Terminal."Accumulated Reset Counter"))));
-                Value[2] := l_ResetCtrCode + FORMAT(Terminal."Accumulated Reset Counter");
+                IF StartDate <> EndDate THEN BEGIN
+                    // FIRST
+                    l_ResetCtrCode := '0000';
+                    l_ResetCtrCode := CopyStr(l_ResetCtrCode, 1, (4 - Strlen(FORMAT(IntBegAccumResetCtr))));
+                    Value[2] := l_ResetCtrCode + FORMAT(IntBegAccumResetCtr);
+                    // LAST
+                    l_ResetCtrCode := '0000';
+                    l_ResetCtrCode := CopyStr(l_ResetCtrCode, 1, (4 - Strlen(FORMAT(IntEndAccumResetCtr))));
+                    Value[2] := Value[2] + '-' + l_ResetCtrCode + FORMAT(IntEndAccumResetCtr);
+                END ELSE BEGIN
+                    l_ResetCtrCode := '0000';
+                    l_ResetCtrCode := CopyStr(l_ResetCtrCode, 1, (4 - Strlen(FORMAT(IntBegAccumResetCtr))));
+                    Value[2] := l_ResetCtrCode + FORMAT(IntBegAccumResetCtr);
+                END;
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 PrintSeperator(2);
                 // Z Report ID
-                cduSender.PrintLine(2, Text116 + recEODLedgerEntry."Z-Report ID");
-
-                IF NOT cduSender.ClosePrinter(2) THEN
-                    EXIT(FALSE);
+                IF StartDate <> EndDate THEN BEGIN
+                    cduSender.PrintLine(2, Text116);
+                    cduSender.PrintLine(2, ZReportIDFrom + ' to ' + ZReportIDTo);
+                END ELSE BEGIN
+                    cduSender.PrintLine(2, Text116 + recEODLedgerEntry."Z-Report ID");
+                END;
             END;
+
+            IF NOT cduSender.ClosePrinter(2) THEN
+                EXIT(FALSE);
         END;
+    end;
+
+    local procedure CheckIfNoSeriesIsEmpty(NoSeries: Code[20]): Code[20]
+    begin
+        IF NoSeries = '' THEN
+            exit('000000000000');
+        exit(NoSeries);
     end;
 
     procedure PrintXYZReportNew(RunType: Option X,Z,Y): Boolean
@@ -7537,7 +7686,7 @@ codeunit 50000 "AP POS Print Utility"
                 Transaction4.SETRANGE("Receipt No.", Transaction3."Retrieved from Receipt No.");
             Value[1] := 'Beg. VOID #:';
             IF Transaction4.FINDFIRST THEN BEGIN
-                Value[2] := Transaction4."Post Void No. Series";
+                Value[2] := CheckIfNoSeriesIsEmpty(Transaction4."Post Void No. Series");
             END ELSE BEGIN
                 Value[2] := '000000000000';
             END;
@@ -7550,7 +7699,7 @@ codeunit 50000 "AP POS Print Utility"
             END;
             Value[1] := 'End. VOID #:';
             IF Transaction4.FINDLAST THEN BEGIN
-                Value[2] := Transaction4."Post Void No. Series";
+                Value[2] := CheckIfNoSeriesIsEmpty(Transaction4."Post Void No. Series");
             END ELSE BEGIN
                 Value[2] := '000000000000';
             END;
@@ -7564,7 +7713,7 @@ codeunit 50000 "AP POS Print Utility"
             Transaction3.SETRANGE("Retrieved from Receipt No.", '');
             Value[1] := 'Beg. RETURN #:';
             IF Transaction3.FINDFIRST THEN BEGIN
-                Value[2] := Transaction3."Return No. Series";
+                Value[2] := CheckIfNoSeriesIsEmpty(Transaction3."Return No. Series");
             END ELSE BEGIN
                 Value[2] := '000000000000';
             END;
@@ -7573,17 +7722,11 @@ codeunit 50000 "AP POS Print Utility"
             // Ending Return
             Value[1] := 'End. RETURN #:';
             IF Transaction3.FINDLAST THEN BEGIN
-                Value[2] := Transaction3."Return No. Series";
+                Value[2] := CheckIfNoSeriesIsEmpty(Transaction3."Return No. Series");
             END ELSE BEGIN
                 Value[2] := '000000000000';
             END;
             EndReturn := Value[2];
-            cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
-
-            DSTR1 := '#L################### #R################'; // Old DSTR1 := '#L##################### #R##############';
-            //Old Accumulated Sales
-            Value[1] := Text63000;
-            Value[2] := POSFunctions.FormatAmount(decLOldAccumulatedSales);
             cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
 
             decLNewAccumulatedSales := decLOldAccumulatedSales + DecLTotalNetSales;
@@ -7594,12 +7737,25 @@ codeunit 50000 "AP POS Print Utility"
                     l_ResetCtrInt := Terminal."Accumulated Reset Counter";
                 end;
 
+                decLNewAccumulatedSales := decLNewAccumulatedSales - 999999999999.99;
+                decLOldAccumulatedSales := decLNewAccumulatedSales;
+
+                DSTR1 := '#L################### #R################'; // Old DSTR1 := '#L##################### #R##############';
+                //Old Accumulated Sales
+                Value[1] := Text63000;
+                Value[2] := POSFunctions.FormatAmount(decLOldAccumulatedSales);
+                cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
+
                 //New Accumulated Sales
                 Value[1] := Text63001;
-                decLNewAccumulatedSales := decLNewAccumulatedSales - 999999999999.99;
                 Value[2] := POSFunctions.FormatAmount(decLNewAccumulatedSales);
                 cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
             end else begin
+                DSTR1 := '#L################### #R################'; // Old DSTR1 := '#L##################### #R##############';
+                //Old Accumulated Sales
+                Value[1] := Text63000;
+                Value[2] := POSFunctions.FormatAmount(decLOldAccumulatedSales);
+                cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
                 //New Accumulated Sales
                 Value[1] := Text63001;
                 Value[2] := POSFunctions.FormatAmount(decLNewAccumulatedSales);

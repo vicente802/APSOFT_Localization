@@ -356,6 +356,7 @@ codeunit 50002 "AP POS Transaction"
                     //TempPOSLine := POSLine;
                     TempPOSLine.Number := POSLine.Number;
                     TempPOSLine.Quantity += POSLine.Quantity;
+                    TempPOSLine.Amount += POSLine.Price;
 
                     TempPOSLine."Unit of Measure" := '';
                     if TempPOSLine.Modify() then;
