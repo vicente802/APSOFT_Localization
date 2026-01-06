@@ -5843,7 +5843,7 @@ codeunit 50002 "AP POS Transaction"
         if pCurrInput <> '' then
             Evaluate(begbalAmount, pCurrInput);
 
-        if (begbalAmount > 0) then begin
+        if (begbalAmount >= 0) then begin
             // if (not (begbalAmount <= 1) and not (begbalAmount > LSCPOSFunction."Beg Bal Allowance") and (begbalAmount <> 0)) then begin
             if ("Beg Bal Allowance" >= begbalAmount) AND ("Beg Bal Allowance" <> 0) then begin
                 REC."Beginning Balance" := begbalAmount;
