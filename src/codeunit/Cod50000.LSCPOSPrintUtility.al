@@ -114,6 +114,8 @@ codeunit 50000 "AP POS Print Utility"
                 IF PrintBuffer."Printed Line No." <> 0 THEN BEGIN
                     // IF (STRPOS(PrintBuffer.Text, 'Z-REPORT') > 0) OR (STRPOS(PrintBuffer.Text, 'Terminal Reading') > 0) OR (STRPOS(PrintBuffer.Text, 'Cashier Reading') > 0) THEN
                     //     IsReading := true;
+                    IF STRPOS(PrintBuffer.Text, 'Sales Slip') > 0 THEN
+                        BREAK;
                     outLFile.Writetext(COPYSTR(PrintBuffer.Text, 1));
                     outLFile.Writetext();
                 END;
@@ -4712,8 +4714,8 @@ codeunit 50000 "AP POS Print Utility"
             FieldValue[2] := POSFunctions.FormatAmount(-ROUND(decLTotalSalesAmount, 0.01, '='));
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
         END ELSE BEGIN
-            //Message('%1 -- %2', decLSalesAmount, decLVATAmount);
-            decLTotalSalesAmount := decLSalesAmount - decLVATAmount - TotalSavings;
+            // Message('%1 -- %2', decLSalesAmount, decLVATAmount);
+            decLTotalSalesAmount := decLSalesAmount - decLVATAmount + TotalSavings;
             FieldValue[1] := 'Amount Due';
             FieldValue[2] := POSFunctions.FormatAmount((ROUND(decLTotalSalesAmount, 0.01, '=')));
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));

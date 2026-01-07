@@ -19,5 +19,10 @@ tableextension 50003 "LSCTransSalesEntry" extends "LSC Trans. Sales Entry"
             DataClassification = CustomerContent;
             OptionMembers = " ",SRC,PWD;
         }
+        field(50005; "Original Price Amount"; Decimal)
+        {
+            DataClassification = CustomerContent;
+            DecimalPlaces = 2;
+        }
     }
 }
