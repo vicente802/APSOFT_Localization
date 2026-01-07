@@ -2301,7 +2301,7 @@ codeunit 50000 "AP POS Print Utility"
 
             if PeriodicDiscountInfoTEMP.FindSet then begin
                 DSTR1 := '#L################# #R###############   ';
-                FieldValue[1] := Text042 + '1 ' + Globals.GetValue('CURRSYM');
+                FieldValue[1] := Text042 + ' ' + Globals.GetValue('CURRSYM');
                 FieldValue[2] := POSFunctions.FormatAmount(-Subtotal + TipsAmount1 + TipsAmount2);
                 cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), false, false, false, false));
                 AddPrintLine(800, 2, NodeName, FieldValue, DSTR1, false, false, false, false, Tray);
@@ -2428,7 +2428,7 @@ codeunit 50000 "AP POS Print Utility"
                     if Globals.UseSalesTax and LocalizationExt.IsNALocalizationEnabled then
                         FieldValue[2] := POSFunctions.FormatAmount(Total + TipsAmount1 + TipsAmount2)
                     else
-                        FieldValue[2] := POSFunctions.FormatAmount(-Subtotal + TipsAmount1 + TipsAmount2 + totSPOAmount);
+                        FieldValue[2] := ' ' + POSFunctions.FormatAmount(-Subtotal + TipsAmount1 + TipsAmount2 + totSPOAmount);
                     if GenPosFunc."Display Secondary Total Curr" and (GenPosFunc."Secondary Total Currency" <> '') and (SecTotal <> 0) then begin
                         SecSubTotal := Round(CurrencyExchRate.ExchangeAmtFCYToFCY(Transaction.Date, Transaction."Trans. Currency", Currency.Code,
                                        Total), Currency."Amount Rounding Precision");
@@ -2807,10 +2807,17 @@ codeunit 50000 "AP POS Print Utility"
         DSTR2: Text[1000];
         OfferCode: Code[20];
     begin
-        if Globals.UseSalesTax and LocalizationExt.IsNALocalizationEnabled then
-            Subtot := Subtotal + TransSalesEntry."Net Amount" - TransSalesEntry."Discount Amount"
-        else
-            Subtot := Subtot + TransSalesEntry."Net Amount" + TransSalesEntry."VAT Amount" - TransSalesEntry."Discount Amount";
+        if Globals.UseSalesTax and LocalizationExt.IsNALocalizationEnabled then begin
+            Subtot := Subtotal + (TransSalesEntry."Net Amount" - TransSalesEntry."Discount Amount") + TransSalesEntry."VAT Amount";
+        end else begin
+            if Transaction.Get(TransSalesEntry."Store No.", TransSalesEntry."POS Terminal No.", TransSalesEntry."Transaction No.") then begin
+                if (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::"Regular Customer") OR (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::REG) then begin//VINCENT20260106
+                    Subtot := Subtot + TransSalesEntry."Net Amount" + TransSalesEntry."VAT Amount" + TransSalesEntry."Discount Amount";
+                end else begin
+                    Subtot := Subtot + TransSalesEntry."Net Amount" - TransSalesEntry."Discount Amount";
+                end;
+            end;
+        end;
         if GenPosFunc."Print Disc/Cpn Info on Slip" in
           [GenPosFunc."Print Disc/Cpn Info on Slip"::"Summary information below Sub-total",
           GenPosFunc."Print Disc/Cpn Info on Slip"::"Detail for each line and Sub-total",
@@ -4003,7 +4010,11 @@ codeunit 50000 "AP POS Print Utility"
                                     if SalesEntry."VAT Code" = 'VE' then begin//VINCENT20260106
                                         recLVATAmountTemp."Unit Price Incl. VAT" := -SalesEntry."Net Amount" + SalesEntry."Discount Amount";//- SalesEntry."Total Discount";
                                     end else begin
-                                        recLVATAmountTemp."Unit Price Incl. VAT" := (-SalesEntry."Net Amount" + SalesEntry."Discount Amount") + SalesEntry."VAT Amount";
+                                        if (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::REG) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::"Regular Customer") then
+                                            recLVATAmountTemp."Unit Price Incl. VAT" := (-SalesEntry."Net Amount" + SalesEntry."Discount Amount") + SalesEntry."VAT Amount"
+                                        else
+                                            recLVATAmountTemp."Unit Price Incl. VAT" := abs(SalesEntry."Net Amount");
+
                                     end;
                                     recLVATAmountTemp.INSERT();
                                 END ELSE BEGIN
@@ -4446,7 +4457,6 @@ codeunit 50000 "AP POS Print Utility"
             if (totalCustItemDisc <> 0) or (Transaction."Customer Discount" <> 0) then
                 PrintSeperator(Tray);
         end;
-
         IncExpEntry.SetRange("Store No.", Transaction."Store No.");
         IncExpEntry.SetRange("POS Terminal No.", Transaction."POS Terminal No.");
         IncExpEntry.SetRange("Transaction No.", Transaction."Transaction No.");
@@ -4704,7 +4714,8 @@ codeunit 50000 "AP POS Print Utility"
             FieldValue[2] := POSFunctions.FormatAmount(-ROUND(decLTotalSalesAmount, 0.01, '='));
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
         END ELSE BEGIN
-            decLTotalSalesAmount := decLSalesAmount + decLVATAmount;
+            Message('%1 -- %2', decLSalesAmount, decLVATAmount);
+            decLTotalSalesAmount := decLSalesAmount - decLVATAmount + TotalSavings;
             FieldValue[1] := 'Amount Due';
             FieldValue[2] := POSFunctions.FormatAmount((ROUND(decLTotalSalesAmount * -1, 0.01, '=')));
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
