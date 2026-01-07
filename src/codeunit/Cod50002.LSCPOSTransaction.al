@@ -365,10 +365,6 @@ codeunit 50002 "AP POS Transaction"
                     TempPOSLine.Insert();
                 end;
             until POSLine.Next() = 0;
-        end else begin
-            TempPOSLine := POSLine;
-            TempPOSLine."Unit of Measure" := '';
-            TempPOSLine.Insert();
         end;
 
         // Step 2: Replace original records with compressed ones

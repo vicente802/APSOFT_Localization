@@ -249,8 +249,25 @@ codeunit 50007 "POSPostUtilityExt"
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"LSC POS Post Utility", 'SalesEntryOnBeforeInsertV2', '', true, true)]
     local procedure SalesEntryOnBeforeInsertV2(var pPOSTransLineTemp: Record "LSC POS Trans. Line" temporary; var pTransSalesEntry: Record "LSC Trans. Sales Entry"; var Transaction: Record "LSC Transaction Header"; Sign: Integer)//(var pPOSTransLine: Record "LSC POS Trans. Line"; var pTransSalesEntry: Record "LSC Trans. Sales Entry")
+    var
+        Item: Record Item;
+        PriceListLine: Record "Price List Line";
+        PriceListHeader: Record "Price List Header";
     begin
         pTransSalesEntry."Local VAT Code" := pPOSTransLineTemp."Local VAT Code";
+        Item.RESET;
+        Item.SETRANGE("No.", pPOSTransLineTemp.Number);
+        IF Item.FINDFIRST THEN BEGIN
+            PriceListLine.RESET;
+            PriceListLine.SETRANGE("Product No.", Item."No.");
+            PriceListLine.SETRANGE(Status, PriceListLine.Status::Active);
+
+            IF PriceListLine.FINDLAST THEN BEGIN
+                pTransSalesEntry."Original Price Amount" := PriceListLine."LSC Unit Price Including VAT";
+            END ELSE BEGIN
+                pTransSalesEntry."Original Price Amount" := Item."Unit Price";
+            END;
+        END;
         if Transaction."Sale Is Return Sale" then
             pTransSalesEntry."Net Amount" := pPOSTransLineTemp."Net Amount";
     end;
