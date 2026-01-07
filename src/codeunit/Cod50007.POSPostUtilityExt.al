@@ -255,6 +255,7 @@ codeunit 50007 "POSPostUtilityExt"
         PriceListHeader: Record "Price List Header";
     begin
         pTransSalesEntry."Local VAT Code" := pPOSTransLineTemp."Local VAT Code";
+        //20260107
         Item.RESET;
         Item.SETRANGE("No.", pPOSTransLineTemp.Number);
         IF Item.FINDFIRST THEN BEGIN
@@ -268,6 +269,8 @@ codeunit 50007 "POSPostUtilityExt"
                 pTransSalesEntry."Original Price Amount" := Item."Unit Price";
             END;
         END;
+        pTransSalesEntry."Item Disc. % Orig." := pPOSTransLineTemp."Item Disc. % Orig.";
+
         if Transaction."Sale Is Return Sale" then
             pTransSalesEntry."Net Amount" := pPOSTransLineTemp."Net Amount";
     end;

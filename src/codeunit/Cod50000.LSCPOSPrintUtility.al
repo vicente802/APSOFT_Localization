@@ -2290,7 +2290,6 @@ codeunit 50000 "AP POS Print Utility"
             NodeName[2] := 'Total Amount';
 
             if PeriodicDiscountInfoTEMP.FindSet then begin
-                Message('%1 -- %2', PeriodicDiscountInfoTEMP.Description, Text024);
                 DSTR1 := '#L################# #R###############   ';
                 FieldValue[1] := Text042 + ' ' + Globals.GetValue('CURRSYM');
                 FieldValue[2] := POSFunctions.FormatAmount(-Subtotal + TipsAmount1 + TipsAmount2);
@@ -2299,35 +2298,33 @@ codeunit 50000 "AP POS Print Utility"
                 TotalAmtForSummary := Subtotal;
                 repeat
                     if (GenPosFunc."Print Disc/Cpn Info on Slip" =
-                      GenPosFunc."Print Disc/Cpn Info on Slip"::"Detail for each line and Sub-total") and
-                      (PeriodicDiscountInfoTEMP.Description <> Text024) then
-                        PeriodicDiscountInfoTEMP."Discount Amount Value" := 0;
-                    if PeriodicDiscountInfoTEMP."Discount Amount Value" <> 0 then begin
-                        FieldValue[1] := PeriodicDiscountInfoTEMP.Description;
-                        Value[1] := '';
-                        DSTR1 := '#L################# #R###############   ';
-                        Case Transaction."Transaction Code Type" of
-                            Transaction."Transaction Code Type"::"SC":
-                                FieldValue[1] := 'Senior Discount';
-                            Transaction."Transaction Code Type"::PWD:
-                                FieldValue[1] := 'PWD Discount';
-                            Transaction."Transaction Code Type"::SOLO:
-                                FieldValue[1] := 'SOLO Discount';
-                            Transaction."Transaction Code Type"::ATHL:
-                                FieldValue[1] := 'Athlete Discount';
-                            //VINCENT20260107
-                            Transaction."Transaction Code Type"::MOV:
-                                FieldValue[1] := 'MOV Discount';
-                            Transaction."Transaction Code Type"::NAAC:  //FieldValue[1] := ' Less VAT 12%';
-                                FieldValue[1] := 'NAAC Discount';
-                        End;
+                      GenPosFunc."Print Disc/Cpn Info on Slip"::"Detail for each line and Sub-total") then //and (PeriodicDiscountInfoTEMP.Description <> Text024) then PeriodicDiscountInfoTEMP."Discount Amount Value" := 0;
+                        if PeriodicDiscountInfoTEMP."Discount Amount Value" <> 0 then begin
+                            FieldValue[1] := PeriodicDiscountInfoTEMP.Description;
+                            Value[1] := '';
+                            DSTR1 := '#L################# #R###############   ';
+                            Case Transaction."Transaction Code Type" of
+                                Transaction."Transaction Code Type"::"SC":
+                                    FieldValue[1] := 'Senior Discount';
+                                Transaction."Transaction Code Type"::PWD:
+                                    FieldValue[1] := 'PWD Discount';
+                                Transaction."Transaction Code Type"::SOLO:
+                                    FieldValue[1] := 'SOLO Discount';
+                                Transaction."Transaction Code Type"::ATHL:
+                                    FieldValue[1] := 'Athlete Discount';
+                                //VINCENT20260107
+                                Transaction."Transaction Code Type"::MOV:
+                                    FieldValue[1] := 'MOV Discount';
+                                Transaction."Transaction Code Type"::NAAC:  //FieldValue[1] := ' Less VAT 12%';
+                                    FieldValue[1] := 'NAAC Discount';
+                            End;
 
-                        FieldValue[2] := POSFunctions.FormatAmount(-PeriodicDiscountInfoTEMP."Discount Amount Value");
-                        cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), false, false, false, false));
-                        AddPrintLine(800, 2, NodeName, FieldValue, DSTR1, false, false, false, false, Tray);
-                        TotalAmtForSummary := TotalAmtForSummary + PeriodicDiscountInfoTEMP."Discount Amount Value";
-                        TotalDiscAmt := TotalDiscAmt + PeriodicDiscountInfoTEMP."Discount Amount Value";
-                    end;
+                            FieldValue[2] := POSFunctions.FormatAmount(PeriodicDiscountInfoTEMP."Discount Amount Value");
+                            cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), false, false, false, false));
+                            AddPrintLine(800, 2, NodeName, FieldValue, DSTR1, false, false, false, false, Tray);
+                            //TotalAmtForSummary := TotalAmtForSummary + PeriodicDiscountInfoTEMP."Discount Amount Value";
+                            //TotalDiscAmt := TotalDiscAmt + PeriodicDiscountInfoTEMP."Discount Amount Value";
+                        end;
                     if PeriodicDiscountInfoTEMP."Discount % Value" <> 0 then begin   //Points
                         DSTR1 := '#L################# #R###############   ';
                         FieldValue[1] := PeriodicDiscountInfoTEMP.Description;
@@ -4335,9 +4332,9 @@ codeunit 50000 "AP POS Print Utility"
                                         (GenPosFunc."Print Disc/Cpn Info on Slip" =
                                         GenPosFunc."Print Disc/Cpn Info on Slip"::"Detail for each line and Sub-total")) then begin
                                             DSTR2 := '   #L################# #N############   ';
-                                            FieldValue[1] := DiscountText;
+                                            FieldValue[1] := DiscountText + ' ' + Format((RecipeBufferTEMP."Item Disc. % Orig.")) + '%';//VINCENT20260107 ADD DISCOUNT %
                                             NodeName[1] := 'Detail Text';
-                                            FieldValue[2] := POSFunctions.FormatAmount(-RecipeBufferDetailTEMP_l."Discount Amount");
+                                            FieldValue[2] := POSFunctions.FormatAmount(RecipeBufferDetailTEMP_l."Discount Amount");
                                             NodeName[2] := 'Detail Amount';
                                             FieldValue[3] := Format(RecipeBufferTEMP."Line No.");
                                             NodeName[3] := 'Line No.';
@@ -4716,7 +4713,7 @@ codeunit 50000 "AP POS Print Utility"
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
         END ELSE BEGIN
             // Message('%1 -- %2', decLSalesAmount, decLVATAmount);
-            decLTotalSalesAmount := decLSalesAmount - decLVATAmount + TotalSavings;
+            decLTotalSalesAmount := decLSalesAmount - decLVATAmount - TotalSavings;
             FieldValue[1] := 'Amount Due';
             FieldValue[2] := POSFunctions.FormatAmount((ROUND(decLTotalSalesAmount, 0.01, '=')));
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
