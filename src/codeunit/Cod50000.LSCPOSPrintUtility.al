@@ -84,12 +84,12 @@ codeunit 50000 "AP POS Print Utility"
         txtLEJFileName: Text[100];
         intLFileID: Integer;
         TextLEJFilePath: Label '%1\%2';
-        TextLEJFileName: Label 'EJ%1%2.txt';
+        TextLEJFileName: Label 'EJ%1%2%3.txt';
     begin
         IF NOT recLTmpBLOBFile.IsEmpty THEN //** Clear the temp table
             recLTmpBLOBFile.DeleteAll();
 
-        txtLEJFileName := STRSUBSTNO(TextLEJFileName, Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>'));
+        txtLEJFileName := CheckIfReading(PrintBuffer);
         IF NOT cduBLOBFileMgt.IsFileExist(intLFileID, txtLEJFileName) THEN BEGIN
             intLFileID := cduBLOBFileMgt.CreateNewFile(1, txtLEJFileName);  //* 1 = Txt File
             Commit();
@@ -112,83 +112,51 @@ codeunit 50000 "AP POS Print Utility"
         IF PrintBuffer.FindSet() THEN BEGIN
             REPEAT
                 IF PrintBuffer."Printed Line No." <> 0 THEN BEGIN
+                    // IF (STRPOS(PrintBuffer.Text, 'Z-REPORT') > 0) OR (STRPOS(PrintBuffer.Text, 'Terminal Reading') > 0) OR (STRPOS(PrintBuffer.Text, 'Cashier Reading') > 0) THEN
+                    //     IsReading := true;
                     outLFile.Writetext(COPYSTR(PrintBuffer.Text, 1));
                     outLFile.Writetext();
                 END;
             UNTIL PrintBuffer.Next = 0;
-            // EJCreation(PrintBuffer); // Problem kapag nag z reading kapag galing sa login
             recBLOBFile.Modify();
         END;
     end;
 
-    procedure EJCreation(var p_PrintBuffer: Record "LSC POS Print Buffer")
+    local procedure CheckIfReading(var PrintBuffer: Record "LSC POS Print Buffer"): Text[100];
     var
-        recLTmpBLOBFile: Record "BLOB File Storage" temporary;
-        cduLFileMngt: Codeunit "File Management";
-        cduLTempBlob: Codeunit "Temp Blob";
-        outLFile: OutStream;
-        insLFile: InStream;
-        txtLFileTextLne: Text;
-        txtLEJFileName: Text[100];
-        intLFileID: Integer;
-        TextLEJFilePath: Label '%1\%2';
-        TextLEJFileName: Label 'EJ%1%2%3.txt';
-
+        IsReading: Boolean;
         c_Transaction: Codeunit "LSC POS Transaction";
         r_TransactionHeader: Record "LSC Transaction Header";
+        TextLEJFileName: Label 'EJ%1%2%3.txt';
+        TextLEJFileNameStandard: Label 'EJ%1%2.txt';
+        txtLEJFileName: Text[100];
     begin
-        r_TransactionHeader.Get(c_Transaction.GetStoreNo(), c_Transaction.GetPOSTerminalNo(), c_Transaction.GetLastTransNo());
-
-        IF NOT recLTmpBLOBFile.IsEmpty THEN //** Clear the temp table
-            recLTmpBLOBFile.DeleteAll();
-
-        // IF r_TransactionHeader."Transaction Type" = r_TransactionHeader."Transaction Type"::Sales then begin
-        //     txtLEJFileName := STRSUBSTNO(TextLEJFileName, 'SALES', Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>'));
-        // end ELSE
-        //     IF r_TransactionHeader."Transaction Type" = r_TransactionHeader."Transaction Type"::Voided then begin
-        //         txtLEJFileName := STRSUBSTNO(TextLEJFileName, 'POSTVOID', Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>'));
-        //     end ELSE
-        //         IF r_TransactionHeader."Transaction Type" = r_TransactionHeader."Transaction Type"::Cancelation THEN begin
-        //             txtLEJFileName := STRSUBSTNO(TextLEJFileName, 'CANCEL', Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>'));
-        //         end;
-        IF (r_TransactionHeader."Gross Amount" < 0) and (r_TransactionHeader."Entry Status" = r_TransactionHeader."Entry Status"::" ") then begin
-            txtLEJFileName := STRSUBSTNO(TextLEJFileName, 'SALES', Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>'));
-        end ELSE
-            IF r_TransactionHeader."Entry Status" = r_TransactionHeader."Entry Status"::Voided then begin
-                txtLEJFileName := STRSUBSTNO(TextLEJFileName, 'CANCEL', Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>'));
-            end ELSE
-                IF (r_TransactionHeader."Gross Amount" > 0) and (r_TransactionHeader."Entry Status" = r_TransactionHeader."Entry Status"::" ") THEN begin
-                    txtLEJFileName := STRSUBSTNO(TextLEJFileName, 'POSTVOID', Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>'));
-                end;
-
-        IF NOT cduBLOBFileMgt.IsFileExist(intLFileID, txtLEJFileName) THEN BEGIN
-            intLFileID := cduBLOBFileMgt.CreateNewFile(1, txtLEJFileName);  //* 1 = Txt File
-            Commit();
-        END;
-        IF NOT recBLOBFile.GET(recBLOBFile.Type::File, intLFileID) THEN
-            EXIT;
-        recBLOBFile.CalcFields(BLOB);
-        IF recBLOBFile.BLOB.HasValue THEN BEGIN
-            recLTmpBLOBFile.BLOB := recBLOBFile.BLOB;       //** Copy the BLOB field to Temp table BLOB field
-            recBLOBFile.BLOB.CreateOutStream(outLFile);
-            recLTmpBLOBFile.BLOB.CreateInStream(insLFile);  //** Create instream from Temp Table Blob field                
-            WHILE NOT (insLFile.EOS()) DO BEGIN
-                CLEAR(txtLFileTextLne);
-                insLFile.ReadText(txtLFileTextLne);         //** Then write it back to the outstream of the Orig table BLOB
-                outLFile.WriteText(COPYSTR(txtLFileTextLne, 1, STRLEN(txtLFileTextLne)));
-                outLFile.Writetext();
-            END;
-        END ELSE
-            recBLOBFile.BLOB.CreateOutStream(outLFile);
-        IF p_PrintBuffer.FindSet() THEN BEGIN
+        IF PrintBuffer.FINDSET THEN BEGIN
             REPEAT
-                IF p_PrintBuffer."Printed Line No." <> 0 THEN BEGIN
-                    outLFile.Writetext(COPYSTR(p_PrintBuffer.Text, 1));
-                    outLFile.Writetext();
+                IF PrintBuffer."Printed Line No." <> 0 THEN BEGIN
+                    IF (STRPOS(PrintBuffer.Text, 'Z-REPORT') > 0) OR (STRPOS(PrintBuffer.Text, 'Terminal Reading') > 0) OR (STRPOS(PrintBuffer.Text, 'Cashier Reading') > 0) THEN BEGIN
+                        IsReading := true;
+                        BREAK;
+                    END;
                 END;
-            UNTIL p_PrintBuffer.Next = 0;
-            recBLOBFile.Modify();
+            UNTIL PrintBuffer.Next = 0;
         END;
+
+        IF NOT IsReading THEN BEGIN
+            r_TransactionHeader.Get(c_Transaction.GetStoreNo(), c_Transaction.GetPOSTerminalNo(), c_Transaction.GetLastTransNo());
+
+            IF (r_TransactionHeader."Gross Amount" < 0) and (r_TransactionHeader."Entry Status" = r_TransactionHeader."Entry Status"::" ") then begin
+                exit(STRSUBSTNO(TextLEJFileName, 'SALES', Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>')));
+            end ELSE
+                IF r_TransactionHeader."Entry Status" = r_TransactionHeader."Entry Status"::Voided then begin
+                    exit(STRSUBSTNO(TextLEJFileName, 'CANCEL', Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>')));
+                end ELSE
+                    IF (r_TransactionHeader."Gross Amount" > 0) and (r_TransactionHeader."Entry Status" = r_TransactionHeader."Entry Status"::" ") THEN begin
+                        exit(STRSUBSTNO(TextLEJFileName, 'POSTVOID', Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>')));
+                    end;
+        END;
+
+        exit(STRSUBSTNO(TextLEJFileNameStandard, Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>')));
     end;
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"LSC POS Print Utility", OnBeforePrintSalesSlip, '', false, false)]
