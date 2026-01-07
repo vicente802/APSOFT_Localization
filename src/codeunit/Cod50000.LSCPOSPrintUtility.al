@@ -2288,6 +2288,7 @@ codeunit 50000 "AP POS Print Utility"
             NodeName[2] := 'Total Amount';
 
             if PeriodicDiscountInfoTEMP.FindSet then begin
+                Message('%1 -- %2', PeriodicDiscountInfoTEMP.Description, Text024);
                 DSTR1 := '#L################# #R###############   ';
                 FieldValue[1] := Text042 + ' ' + Globals.GetValue('CURRSYM');
                 FieldValue[2] := POSFunctions.FormatAmount(-Subtotal + TipsAmount1 + TipsAmount2);
