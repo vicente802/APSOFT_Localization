@@ -58,6 +58,21 @@ codeunit 50007 "POSPostUtilityExt"
             end;
         end;
     end;
+    //VINCENT20260108
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"LSC POS Post Utility", OnAfterCompressSalesTrans, '', false, false)]
+    local procedure "LSC POS Post Utility_OnAfterCompressSalesTrans"(TmpComprPOSTrLine: Record "LSC POS Trans. Line" temporary; var POSTransLineTmp: Record "LSC POS Trans. Line" temporary)
+    var
+        decVat: Decimal;
+        POSTransaction: Record "LSC POS Transaction";
+    begin
+        POSTransaction.Get(POSTransLineTmp."Receipt No.");
+        if POSTransaction."Transaction Code Type" = POSTransaction."Transaction Code Type"::WHT1 THEN begin
+            decVat := POSTransLineTmp.Amount - (POSTransLineTmp.Amount / (1 + (POSTransLineTmp."VAT %" / 100)));
+            POSTransLineTmp."Net Amount" := Round(POSTransLineTmp.Amount / (1 + (POSTransLineTmp."VAT %" / 100)), 0.01);
+            POSTransLineTmp."VAT Amount" := Round(decVat, 0.01);
+            POSTransLineTmp.Modify();
+        end;
+    end;
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"LSC POS Post Utility", 'OnAfterInsertTransHeader', '', true, true)]
     local procedure OnAfterInsertTransHeader(var POSTrans: Record "LSC POS Transaction"; var Transaction: Record "LSC Transaction Header")
@@ -268,6 +283,7 @@ codeunit 50007 "POSPostUtilityExt"
                 pTransSalesEntry."Original Price Amount" := Item."Unit Price";
             END;
         END;
+        //Message('%1', pPOSTransLineTemp."Vat Amount");
         if Transaction."Sale Is Return Sale" then
             pTransSalesEntry."Net Amount" := pPOSTransLineTemp."Net Amount";
     end;

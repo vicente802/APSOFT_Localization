@@ -4018,9 +4018,8 @@ codeunit 50000 "AP POS Print Utility"
                                     if SalesEntry."VAT Code" = 'VE' then begin//VINCENT20260106
                                         recLVATAmountTemp."Unit Price Incl. VAT" := -SalesEntry."Net Amount" + SalesEntry."Discount Amount";//- SalesEntry."Total Discount";
                                     end else begin
-                                        if (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::REG) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::"Regular Customer") then begin
+                                        if (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::REG) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type") AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::"Regular Customer") then begin
                                             recLVATAmountTemp."Unit Price Incl. VAT" := abs(-SalesEntry."Net Amount" + SalesEntry."Discount Amount") + SalesEntry."VAT Amount";
-                                            Message('%1 -- %2 -- %3', SalesEntry."Net Amount", SalesEntry."Discount Amount", SalesEntry."VAT Amount");
                                         end else
                                             recLVATAmountTemp."Unit Price Incl. VAT" := abs(SalesEntry."Net Amount");
                                     end;
@@ -4269,14 +4268,14 @@ codeunit 50000 "AP POS Print Utility"
 
                                 case Transaction."Transaction Code Type" OF
                                     Transaction."Transaction Code Type"::"SC":
-                                        DiscountText := 'Senior Disc.';
+                                        DiscountText := 'SC Disc.';
                                     Transaction."Transaction Code Type"::PWD:
                                         DiscountText := 'PWD Disc.';
                                     Transaction."Transaction Code Type"::SOLO:
                                         DiscountText := 'SOLO Disc.';
                                     //VINCENT20260107
                                     Transaction."Transaction Code Type"::ATHL:
-                                        DiscountText := 'Athlete Discount';
+                                        DiscountText := 'Athlete Disc.';
                                     Transaction."Transaction Code Type"::MOV:
                                         DiscountText := 'MOV Disc.';
                                     Transaction."Transaction Code Type"::NAAC:
@@ -4729,7 +4728,7 @@ codeunit 50000 "AP POS Print Utility"
             FieldValue[2] := POSFunctions.FormatAmount(-ROUND(decLTotalSalesAmount, 0.01, '='));
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
         END ELSE BEGIN
-            decLTotalSalesAmount := decLSalesAmount - decLVATAmount - TotalSavings;
+            decLTotalSalesAmount := decLSalesAmount - decLVATAmount - TotalSavings - Transaction."WHT Amount";
             FieldValue[1] := 'Amount Due';
             FieldValue[2] := POSFunctions.FormatAmount((ROUND(decLTotalSalesAmount, 0.01, '=')));
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
