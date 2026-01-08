@@ -197,12 +197,22 @@ codeunit 50005 "BLOBFileManagement"
         txtLEJFileName: Text[100];
         intLFileID: Integer;
         TextLEJFilePath: Label '%1\%2';
-        TextLEJFileName: Label 'EJ%1%2%3.txt';
+        TextLEJFileNameSingleDate: Label 'REGEN. EJ%1%2.txt';
+        TextLEJFileNameDoubleDate: Label 'REGEN. EJ%1%2 TO %1%2.txt';
+        FormattedStartDate: Text[10];
+        FormattedEndDate: Text[10];
     begin
         IF NOT recLTmpBLOBFile.IsEmpty THEN //** Clear the temp table
             recLTmpBLOBFile.DeleteAll();
 
-        txtLEJFileName := STRSUBSTNO(TextLEJFileName, Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>'));
+        FormattedStartDate := Format(StartDate, 0, '<Year4><Month,2><Day,2>');
+        FormattedEndDate := Format(EndDate, 0, '<Year4><Month,2><Day,2>');
+
+        IF StartDate <> EndDate THEN BEGIN
+            txtLEJFileName := STRSUBSTNO(TextLEJFileNameDoubleDate, Globals.TerminalNo, FORMAT(FormattedStartDate), Globals.TerminalNo(), FORMAT(FormattedEndDate));
+        END ELSE BEGIN
+            txtLEJFileName := STRSUBSTNO(TextLEJFileNameSingleDate, Globals.TerminalNo, FORMAT(FormattedStartDate));
+        END;
 
         IF NOT IsFileExist(intLFileID, txtLEJFileName) THEN BEGIN
             intLFileID := CreateNewFile(1, txtLEJFileName);  //* 1 = Txt File
@@ -212,13 +222,15 @@ codeunit 50005 "BLOBFileManagement"
         IF NOT recBLOBFile.GET(recBLOBFile.Type::File, intLFileID) THEN
             EXIT;
 
+        recBLOBFile2.RESET;
         recBLOBFile2.SETFILTER("FILE DATE", '%1..%2', StartDate, EndDate);
+        recBLOBFile2.SETFILTER("Name", '*SALES*|*POSTVOID*');
         IF recBLOBFile2.FINDSET THEN BEGIN
+            recBLOBFile.BLOB.CreateOutStream(outLFile);
             REPEAT
-                recBLOBFile.CalcFields(BLOB);
-                IF recBLOBFile.BLOB.HasValue THEN BEGIN
-                    recLTmpBLOBFile.BLOB := recBLOBFile.BLOB;       //** Copy the BLOB field to Temp table BLOB field
-                    recBLOBFile.BLOB.CreateOutStream(outLFile);
+                recBLOBFile2.CalcFields(BLOB);
+                IF recBLOBFile2.BLOB.HasValue THEN BEGIN
+                    recLTmpBLOBFile.BLOB := recBLOBFile2.BLOB;       //** Copy the BLOB field to Temp table BLOB field
                     recLTmpBLOBFile.BLOB.CreateInStream(insLFile);  //** Create instream from Temp Table Blob field                
                     WHILE NOT (insLFile.EOS()) DO BEGIN
                         CLEAR(txtLFileTextLne);
@@ -229,6 +241,8 @@ codeunit 50005 "BLOBFileManagement"
                 END ELSE
                     recBLOBFile.BLOB.CreateOutStream(outLFile);
             UNTIL recBLOBFile2.NEXT = 0;
+            recBLOBFile.MODIFY;
+            DownloadFile(recBLOBFile.ID);
         END;
     end;
     //
