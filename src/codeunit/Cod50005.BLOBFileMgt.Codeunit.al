@@ -183,6 +183,56 @@ codeunit 50005 "BLOBFileManagement"
         end;
     end;
 
+    // MARCUS 20260107
+    procedure RegenSalesEJ(StartDate: Date; EndDate: Date)
+    var
+        recLTmpBLOBFile: Record "BLOB File Storage" temporary;
+        recBLOBFile: Record "BLOB File Storage";
+        recBLOBFile2: Record "BLOB File Storage";
+        cduLFileMngt: Codeunit "File Management";
+        cduLTempBlob: Codeunit "Temp Blob";
+        outLFile: OutStream;
+        insLFile: InStream;
+        txtLFileTextLne: Text;
+        txtLEJFileName: Text[100];
+        intLFileID: Integer;
+        TextLEJFilePath: Label '%1\%2';
+        TextLEJFileName: Label 'EJ%1%2%3.txt';
+    begin
+        IF NOT recLTmpBLOBFile.IsEmpty THEN //** Clear the temp table
+            recLTmpBLOBFile.DeleteAll();
+
+        txtLEJFileName := STRSUBSTNO(TextLEJFileName, Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>'));
+
+        IF NOT IsFileExist(intLFileID, txtLEJFileName) THEN BEGIN
+            intLFileID := CreateNewFile(1, txtLEJFileName);  //* 1 = Txt File
+            Commit();
+        END;
+
+        IF NOT recBLOBFile.GET(recBLOBFile.Type::File, intLFileID) THEN
+            EXIT;
+
+        recBLOBFile2.SETFILTER("FILE DATE", '%1..%2', StartDate, EndDate);
+        IF recBLOBFile2.FINDSET THEN BEGIN
+            REPEAT
+                recBLOBFile.CalcFields(BLOB);
+                IF recBLOBFile.BLOB.HasValue THEN BEGIN
+                    recLTmpBLOBFile.BLOB := recBLOBFile.BLOB;       //** Copy the BLOB field to Temp table BLOB field
+                    recBLOBFile.BLOB.CreateOutStream(outLFile);
+                    recLTmpBLOBFile.BLOB.CreateInStream(insLFile);  //** Create instream from Temp Table Blob field                
+                    WHILE NOT (insLFile.EOS()) DO BEGIN
+                        CLEAR(txtLFileTextLne);
+                        insLFile.ReadText(txtLFileTextLne);         //** Then write it back to the outstream of the Orig table BLOB
+                        outLFile.WriteText(COPYSTR(txtLFileTextLne, 1, STRLEN(txtLFileTextLne)));
+                        outLFile.Writetext();
+                    END;
+                END ELSE
+                    recBLOBFile.BLOB.CreateOutStream(outLFile);
+            UNTIL recBLOBFile2.NEXT = 0;
+        END;
+    end;
+    //
+
     Procedure GetUserNameFromSID(UserSID: Guid): code[50]
     var
         recSysUser: Record User;
@@ -204,4 +254,5 @@ codeunit 50005 "BLOBFileManagement"
 
     var
         FileFoundConfirm: Label 'The file %1 already exists within the selected directory. Overwrite?';
+        Globals: Codeunit "LSC POS Session";
 }

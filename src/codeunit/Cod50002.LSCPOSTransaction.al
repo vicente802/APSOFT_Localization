@@ -489,6 +489,23 @@ codeunit 50002 "AP POS Transaction"
                 EXIT;
             end;
         end;
+        // MARCUS 20260107
+        if POSMenuLine.Command = 'REGEN-SALES' then begin
+            IF PageDialog.RUNMODAL = Action::OK THEN BEGIN
+                StartDate := PageDialog.GetStartDate;
+                EndDate := PageDialog.GetEndDate;
+
+                IF (StartDate <> 0D) AND (EndDate <> 0D) THEN BEGIN
+                    BlobFileMgt.RegenSalesEJ(StartDate, EndDate);
+                END ELSE BEGIN
+                    codpOSTrans.ErrorBeep('Kindly specify a Date.');
+                END;
+                POSSESSION.ClearManagerID();
+                StartDate := 0D;
+                EndDate := 0D;
+            END;
+        end;
+        //
         if POSMenuLine.Command = 'REASON' then begin
 
         end;
@@ -497,7 +514,14 @@ codeunit 50002 "AP POS Transaction"
                 StartDate := PageDialog.GetStartDate;
                 EndDate := PageDialog.GetEndDate;
 
-                l_POSPrintUtility.ReprintZ(StartDate, EndDate);
+                IF (StartDate <> 0D) AND (EndDate <> 0D) THEN BEGIN
+                    l_POSPrintUtility.ReprintZ(StartDate, EndDate);
+                END ELSE BEGIN
+                    codpOSTrans.ErrorBeep('Kindly specify a Date.');
+                END;
+                POSSESSION.ClearManagerID();
+                StartDate := 0D;
+                EndDate := 0D;
                 // Message('%1 %2', StartDate, EndDate);
             END;
         end;
@@ -3356,20 +3380,30 @@ codeunit 50002 "AP POS Transaction"
             REC."Zero Rated Applied Counter" := REC."Zero Rated Applied Counter" + 1;
             REC.MODifY;
 
-            decLAmount := 0;
             decLZeroRatedAmt := 0;
-            decLVZOrigAmount := 0;
-            decLVZAmount := 0;
-            decLVZAmountTmp := 0;
-            declVZSalesDiff := 0;
+            // decLAmount := 0;
+            // decLVZOrigAmount := 0;
+            // decLVZAmount := 0;
+            // decLVZAmountTmp := 0;
+            // declVZSalesDiff := 0;
 
             recLPOSTransLine.RESET;
             recLPOSTransLine.SETRANGE("Receipt No.", REC."Receipt No.");
             recLPOSTransLine.SETRANGE("Entry Type", recLPOSTransLine."Entry Type"::Item);
             recLPOSTransLine.SETRANGE("Entry Status", recLPOSTransLine."Entry Status"::" ");
 
+            // Working to pero need masama yung QTY nya since sa Org. Price Inc. VAT is yung pang single value lang
             if recLPOSTransLine.FINDFIRST THEN
                 REPEAT
+                    // MARCUS 20260108
+                    decLAmount := 0;
+                    decLVZOrigAmount := 0;
+                    decLVZAmount := 0;
+                    decLVZAmountTmp := 0;
+                    declVZSalesDiff := 0;
+                    decTotalTransLineVZ := 0;
+                    decTotalTransVZAmt := 0;
+                    //
                     if (recLPOSTransLine."VAT Code" = 'VZ') then begin
                         if (REC."Transaction Code Type" IN
                                                            [REC."Transaction Code Type"::ZERO,
@@ -3380,7 +3414,9 @@ codeunit 50002 "AP POS Transaction"
                         end else
                             decLNetofVAT := ROUND((recLPOSTransLine.Amount / 1.12), 0.01);
 
-                        decLVZOrigAmount := decLVZOrigAmount + recLPOSTransLine."Org. Price Inc. VAT";
+                        // MARCUS 20260108
+                        decLVZOrigAmount := (decLVZOrigAmount + recLPOSTransLine."Org. Price Inc. VAT") * recLPOSTransLine.Quantity;
+                        // decLVZOrigAmount := decLVZOrigAmount + recLPOSTransLine."Org. Price Inc. VAT";
 
                         recLPOSTransLine.Amount := decLNetofVAT;
                         recLPOSTransLine."Net Amount" := decLNetofVAT;
@@ -3394,46 +3430,90 @@ codeunit 50002 "AP POS Transaction"
                     end;
 
                     recLPOSTransLine.MODifY;
-                    decLZeroRatedAmt := decLZeroRatedAmt + ROUND(recLPOSTransLine."Zero Rated Amount", 0.01, '=');
+                    // MARCUS 20260108
+                    decLZeroRatedAmt := decLZeroRatedAmt + ((decLNetofVAT * 1.12) * 0.12);
+                    // decLZeroRatedAmt := decLZeroRatedAmt + ROUND((recLPOSTransLine."Zero Rated Amount"), 0.01, '=');
 
+
+                    decLVZAmountTmp := ROUND((decLVZOrigAmount / 1.12), 0.01);
+                    decTotalTransLineVZ := 0;
+
+                    recLPOSTransLine2.RESET;
+                    recLPOSTransLine2.SETRANGE("Receipt No.", REC."Receipt No.");
+                    // MARCUS 20260108
+                    recLPOSTransLine2.SETRANGE("Line No.", recLPOSTransLine."Line No.");
+                    //
+                    recLPOSTransLine2.SETRANGE("Entry Type", recLPOSTransLine2."Entry Type"::Item);
+                    recLPOSTransLine2.SETRANGE("Entry Status", recLPOSTransLine2."Entry Status"::" ");
+                    recLPOSTransLine2.SETRANGE(recLPOSTransLine2."VAT Code", 'VZ');
+                    // MARCUS 20260108
+                    if recLPOSTransLine2.FINDFIRST THEN BEGIN
+                        decTotalTransLineVZ := decTotalTransLineVZ + ROUND(recLPOSTransLine2.Amount, 0.01, '=');
+                        decTotalTransVZAmt := decTotalTransVZAmt + ROUND(recLPOSTransLine2."Zero Rated Amount", 0.01, '=');
+                    END;
+                    //
+                    // REPEAT
+                    //     decTotalTransLineVZ := decTotalTransLineVZ + ROUND(recLPOSTransLine2.Amount, 0.01, '=');
+                    //     decTotalTransVZAmt := decTotalTransVZAmt + ROUND(recLPOSTransLine2."Zero Rated Amount", 0.01, '=');
+                    // UNTIL recLPOSTransLine2.NEXT = 0;
+                    declVZSalesDiff := ROUND((decLVZAmountTmp - decTotalTransLineVZ), 0.01);
+                    decVZAmtDiff := ROUND((decLVZOrigAmount - decLVZAmountTmp), 0.01) - decTotalTransVZAmt;
+
+                    if (declVZSalesDiff <> 0) OR (decVZAmtDiff <> 0) then begin
+                        recLPOSTransLine2.RESET;
+                        recLPOSTransLine2.SETRANGE("Receipt No.", REC."Receipt No.");
+                        // MARCUS 20260108
+                        recLPOSTransLine2.SETRANGE("Line No.", recLPOSTransLine."Line No.");
+                        //
+                        recLPOSTransLine2.SETRANGE("Entry Type", recLPOSTransLine2."Entry Type"::Item);
+                        recLPOSTransLine2.SETRANGE("Entry Status", recLPOSTransLine2."Entry Status"::" ");
+                        recLPOSTransLine2.SETRANGE(recLPOSTransLine2."VAT Code", 'VZ');
+                        if recLPOSTransLine2.FINDFIRST then begin
+                            if declVZSalesDiff >= 0 THEN
+                                recLPOSTransLine2.Amount := recLPOSTransLine2.Amount + declVZSalesDiff
+                            ELSE
+                                recLPOSTransLine2.Amount := recLPOSTransLine2.Amount + declVZSalesDiff;
+
+                            recLPOSTransLine2."Zero Rated Amount" := recLPOSTransLine2."Zero Rated Amount" + decVZAmtDiff;
+                            recLPOSTransLine2.MODifY;
+                        end;
+                    end;
                 UNTIL recLPOSTransLine.NEXT = 0;
 
-            decLVZAmountTmp := ROUND((decLVZOrigAmount / 1.12), 0.01);
-            decTotalTransLineVZ := 0;
+            // decLVZAmountTmp := ROUND((decLVZOrigAmount / 1.12), 0.01);
+            // decTotalTransLineVZ := 0;
+            // recLPOSTransLine2.RESET;
+            // recLPOSTransLine2.SETRANGE("Receipt No.", REC."Receipt No.");
+            // recLPOSTransLine2.SETRANGE("Entry Type", recLPOSTransLine2."Entry Type"::Item);
+            // recLPOSTransLine2.SETRANGE("Entry Status", recLPOSTransLine2."Entry Status"::" ");
+            // recLPOSTransLine2.SETRANGE(recLPOSTransLine2."VAT Code", 'VZ');
+            // if recLPOSTransLine2.FINDFIRST THEN
+            //     REPEAT
+            //         decTotalTransLineVZ := decTotalTransLineVZ + ROUND(recLPOSTransLine2.Amount, 0.01, '=');
+            //         decTotalTransVZAmt := decTotalTransVZAmt + ROUND(recLPOSTransLine2."Zero Rated Amount", 0.01, '=');
+            //     UNTIL recLPOSTransLine2.NEXT = 0;
+            // declVZSalesDiff := decLVZAmountTmp - decTotalTransLineVZ;
+            // decVZAmtDiff := ROUND((decLVZOrigAmount - decLVZAmountTmp), 0.01) - decTotalTransVZAmt;
 
-            recLPOSTransLine2.RESET;
-            recLPOSTransLine2.SETRANGE("Receipt No.", REC."Receipt No.");
-            recLPOSTransLine2.SETRANGE("Entry Type", recLPOSTransLine2."Entry Type"::Item);
-            recLPOSTransLine2.SETRANGE("Entry Status", recLPOSTransLine2."Entry Status"::" ");
-            recLPOSTransLine2.SETRANGE(recLPOSTransLine2."VAT Code", 'VZ');
-            if recLPOSTransLine2.FINDFIRST THEN
-                REPEAT
-                    decTotalTransLineVZ := decTotalTransLineVZ + ROUND(recLPOSTransLine2.Amount, 0.01, '=');
-                    decTotalTransVZAmt := decTotalTransVZAmt + ROUND(recLPOSTransLine2."Zero Rated Amount", 0.01, '=');
-                UNTIL recLPOSTransLine2.NEXT = 0;
-            declVZSalesDiff := decLVZAmountTmp - decTotalTransLineVZ;
-            decVZAmtDiff := ROUND((decLVZOrigAmount - decLVZAmountTmp), 0.01) - decTotalTransVZAmt;
+            // if (declVZSalesDiff <> 0) OR (decVZAmtDiff <> 0) then begin
+            //     recLPOSTransLine2.RESET;
+            //     recLPOSTransLine2.SETRANGE("Receipt No.", REC."Receipt No.");
+            //     recLPOSTransLine2.SETRANGE("Entry Type", recLPOSTransLine2."Entry Type"::Item);
+            //     recLPOSTransLine2.SETRANGE("Entry Status", recLPOSTransLine2."Entry Status"::" ");
+            //     recLPOSTransLine2.SETRANGE(recLPOSTransLine2."VAT Code", 'VZ');
+            //     if recLPOSTransLine2.FINDFIRST then begin
+            //         if declVZSalesDiff >= 0 THEN
+            //             recLPOSTransLine2.Amount := recLPOSTransLine2.Amount + declVZSalesDiff
+            //         ELSE
+            //             recLPOSTransLine2.Amount := recLPOSTransLine2.Amount + declVZSalesDiff;
 
-            if (declVZSalesDiff <> 0) OR (decVZAmtDiff <> 0) then begin
-                recLPOSTransLine2.RESET;
-                recLPOSTransLine2.SETRANGE("Receipt No.", REC."Receipt No.");
-                recLPOSTransLine2.SETRANGE("Entry Type", recLPOSTransLine2."Entry Type"::Item);
-                recLPOSTransLine2.SETRANGE("Entry Status", recLPOSTransLine2."Entry Status"::" ");
-                recLPOSTransLine2.SETRANGE(recLPOSTransLine2."VAT Code", 'VZ');
-                if recLPOSTransLine2.FINDFIRST then begin
-                    if declVZSalesDiff >= 0 THEN
-                        recLPOSTransLine2.Amount := recLPOSTransLine2.Amount + declVZSalesDiff
-                    ELSE
-                        recLPOSTransLine2.Amount := recLPOSTransLine2.Amount + declVZSalesDiff;
+            //         recLPOSTransLine2."Zero Rated Amount" := recLPOSTransLine2."Zero Rated Amount" + decVZAmtDiff;
+            //         recLPOSTransLine2.MODifY;
+            //     end;
+            // end;
 
-                    recLPOSTransLine2."Net Amount" := recLPOSTransLine2.Amount;
-
-                    recLPOSTransLine2."Zero Rated Amount" := recLPOSTransLine2."Zero Rated Amount" + decVZAmtDiff;
-                    recLPOSTransLine2.MODifY;
-                end;
-            end;
-
-            REC."Zero Rated Amount" := ROUND((decLVZOrigAmount - decLVZAmountTmp), 0.01);
+            // REC."Zero Rated Amount" := ROUND((decLVZOrigAmount - decLVZAmountTmp), 0.01);
+            REC."Zero Rated Amount" := ROUND(decLZeroRatedAmt, 0.01);
             REC."Zero Rated Applied Counter" += 1;
             REC.MODifY;
             Message('Zero Rated  Applied');
@@ -3946,6 +4026,7 @@ codeunit 50002 "AP POS Transaction"
             recLPOSTransLine."Store No." := POSTrans."Store No.";
             recLPOSTransLine."POS Terminal No." := POSTrans."POS Terminal No.";
             recLPOSTransLine.Amount := POSTrans."Zero Rated Amount";
+            // recLPOSTransLine.Amount := 100.00;
             recLPOSTransLine.Quantity := 1;
             recLPOSTransLine."VAT Code" := '';
             recLPOSTransLine.Insert();
@@ -6104,4 +6185,6 @@ codeunit 50002 "AP POS Transaction"
         askuser, askuser2 : Boolean;
         APEventSubscriber: Codeunit APEventSubscriber;
         g_balance: decimal;
+        // MARCUS 20250107
+        BlobFileMgt: Codeunit BLOBFileManagement;
 }

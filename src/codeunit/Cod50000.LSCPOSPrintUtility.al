@@ -84,12 +84,17 @@ codeunit 50000 "AP POS Print Utility"
         txtLEJFileName: Text[100];
         intLFileID: Integer;
         TextLEJFilePath: Label '%1\%2';
+        // MARCUS 20260106
+        // TextLEJFileName: Label 'EJ%1%2.txt';
         TextLEJFileName: Label 'EJ%1%2%3.txt';
+    //
     begin
         IF NOT recLTmpBLOBFile.IsEmpty THEN //** Clear the temp table
             recLTmpBLOBFile.DeleteAll();
-
+        // MARCUS 20260106
+        // txtLEJFileName := STRSUBSTNO(TextLEJFileName, Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>'));
         txtLEJFileName := CheckIfReading(PrintBuffer);
+        //
         IF NOT cduBLOBFileMgt.IsFileExist(intLFileID, txtLEJFileName) THEN BEGIN
             intLFileID := cduBLOBFileMgt.CreateNewFile(1, txtLEJFileName);  //* 1 = Txt File
             Commit();
@@ -112,10 +117,10 @@ codeunit 50000 "AP POS Print Utility"
         IF PrintBuffer.FindSet() THEN BEGIN
             REPEAT
                 IF PrintBuffer."Printed Line No." <> 0 THEN BEGIN
-                    // IF (STRPOS(PrintBuffer.Text, 'Z-REPORT') > 0) OR (STRPOS(PrintBuffer.Text, 'Terminal Reading') > 0) OR (STRPOS(PrintBuffer.Text, 'Cashier Reading') > 0) THEN
-                    //     IsReading := true;
+                    // MARCUS 20260106
                     IF STRPOS(PrintBuffer.Text, 'Sales Slip') > 0 THEN
                         BREAK;
+                    //
                     outLFile.Writetext(COPYSTR(PrintBuffer.Text, 1));
                     outLFile.Writetext();
                 END;
@@ -123,7 +128,7 @@ codeunit 50000 "AP POS Print Utility"
             recBLOBFile.Modify();
         END;
     end;
-
+    // MARCUS 20260106
     local procedure CheckIfReading(var PrintBuffer: Record "LSC POS Print Buffer"): Text[100];
     var
         IsReading: Boolean;
@@ -160,6 +165,7 @@ codeunit 50000 "AP POS Print Utility"
 
         exit(STRSUBSTNO(TextLEJFileNameStandard, Globals.TerminalNo, FORMAT(WORKDATE, 0, '<Month,2><day,2><year>')));
     end;
+    //
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"LSC POS Print Utility", OnBeforePrintSalesSlip, '', false, false)]
     local procedure "LSC POS Print Utility_OnBeforePrintSalesSlip"(var Sender: Codeunit "LSC POS Print Utility"; var Transaction: Record "LSC Transaction Header"; var PrintBuffer: Record "LSC POS Print Buffer"; var PrintBufferIndex: Integer; var LinesPrinted: Integer; var IsHandled: Boolean; var ReturnValue: Boolean)
@@ -5602,7 +5608,7 @@ codeunit 50000 "AP POS Print Utility"
             until TenderType.Next = 0;
 
     end;
-
+    // MARCUS 20260106
     procedure ReprintZ(StartDate: Date; EndDate: Date): Boolean
     var
         Transaction: Record "LSC Transaction Header";
@@ -6030,6 +6036,7 @@ codeunit 50000 "AP POS Print Utility"
             exit('000000000000');
         exit(NoSeries);
     end;
+    //
 
     procedure PrintXYZReportNew(RunType: Option X,Z,Y): Boolean
     var
@@ -7704,7 +7711,7 @@ codeunit 50000 "AP POS Print Utility"
             Value[1] := Text63003;
             Value[2] := codLEndInvNo;
             cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
-            // Beginning Void
+            // Beginning Void MARCUS 20260106
             Transaction3.SETRANGE("Sale Is Return Sale", true);
             Transaction3.SETFILTER("Date", '%1', TransDate);
             Transaction3.SETFILTER("Transaction Code Type", '<>%1', Transaction3."Transaction Code Type"::DEPOSIT);
@@ -7795,6 +7802,7 @@ codeunit 50000 "AP POS Print Utility"
             l_ResetCtrCode := CopyStr(l_ResetCtrCode, 1, (4 - Strlen(FORMAT(Terminal."Accumulated Reset Counter"))));
             Value[2] := l_ResetCtrCode + FORMAT(Terminal."Accumulated Reset Counter");
             cduSender.PrintLine(2, cduSender.FormatLine(cduSender.FormatStr(Value, DSTR1), FALSE, TRUE, FALSE, FALSE));
+            //
         END;
 
         TipsBufferTmp.RESET;
