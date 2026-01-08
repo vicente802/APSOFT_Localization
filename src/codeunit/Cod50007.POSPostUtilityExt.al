@@ -283,6 +283,7 @@ codeunit 50007 "POSPostUtilityExt"
                 pTransSalesEntry."Original Price Amount" := Item."Unit Price";
             END;
         END;
+        pTransSalesEntry."Item Disc. % Orig." := pPOSTransLineTemp."Item Disc. % Orig.";
         //Message('%1', pPOSTransLineTemp."Vat Amount");
         if Transaction."Sale Is Return Sale" then
             pTransSalesEntry."Net Amount" := pPOSTransLineTemp."Net Amount";
