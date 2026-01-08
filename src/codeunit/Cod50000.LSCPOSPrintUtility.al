@@ -4018,7 +4018,7 @@ codeunit 50000 "AP POS Print Utility"
                                     if SalesEntry."VAT Code" = 'VE' then begin//VINCENT20260106
                                         recLVATAmountTemp."Unit Price Incl. VAT" := -SalesEntry."Net Amount" + SalesEntry."Discount Amount";//- SalesEntry."Total Discount";
                                     end else begin
-                                        if (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::REG) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type") AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::"Regular Customer") then begin
+                                        if (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::REG) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::WHT1) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::"Regular Customer") then begin
                                             recLVATAmountTemp."Unit Price Incl. VAT" := abs(-SalesEntry."Net Amount" + SalesEntry."Discount Amount") + SalesEntry."VAT Amount";
                                         end else
                                             recLVATAmountTemp."Unit Price Incl. VAT" := abs(SalesEntry."Net Amount");
@@ -4028,7 +4028,7 @@ codeunit 50000 "AP POS Print Utility"
                                     //VINCENT20260107
                                     recLVATAmountTemp."No." := SalesEntry."VAT Code";
                                     recLVATAmountTemp."Unit Price" := recLVATAmountTemp."Unit Price" + SalesEntry."VAT Amount";
-                                    if (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::REG) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::"Regular Customer") then begin
+                                    if (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::REG) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::WHT1) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::"Regular Customer") then begin
                                         recLVATAmountTemp."Unit Price Incl. VAT" += abs(-SalesEntry."Net Amount" + SalesEntry."Discount Amount") + SalesEntry."VAT Amount";
                                     end else
                                         recLVATAmountTemp."Unit Price Incl. VAT" += abs(SalesEntry."Net Amount");
