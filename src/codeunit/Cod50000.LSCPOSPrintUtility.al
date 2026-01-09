@@ -4281,7 +4281,7 @@ codeunit 50000 "AP POS Print Utility"
                                         DiscountText := 'SOLO Disc.';
                                     //VINCENT20260107
                                     Transaction."Transaction Code Type"::ATHL:
-                                        DiscountText := 'Athlete Disc.';
+                                        DiscountText := 'ATHL Disc.';
                                     Transaction."Transaction Code Type"::MOV:
                                         DiscountText := 'MOV Disc.';
                                     Transaction."Transaction Code Type"::NAAC:
