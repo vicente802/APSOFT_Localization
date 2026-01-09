@@ -4735,7 +4735,7 @@ codeunit 50000 "AP POS Print Utility"
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
         END ELSE BEGIN
             decLTotalSalesAmount := decLSalesAmount - decLVATAmount - TotalSavings - Transaction."WHT Amount" - Transaction."VAT Withholding";
-            Message('%1 -- %2 -- %3 -- %4 -- %5 -- %6', decLSalesAmount, decLVATAmount, TotalSavings, Transaction."WHT Amount", Transaction."VAT Withholding", Transaction."Zero Rated Amount");
+            //Message('%1 -- %2 -- %3 -- %4 -- %5 -- %6', decLSalesAmount, decLVATAmount, TotalSavings, Transaction."WHT Amount", Transaction."VAT Withholding", Transaction."Zero Rated Amount");
             FieldValue[1] := 'Amount Due';
             FieldValue[2] := POSFunctions.FormatAmount(Abs(ROUND(decLTotalSalesAmount, 0.01, '=')));
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
