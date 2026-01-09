@@ -2825,7 +2825,7 @@ codeunit 50000 "AP POS Print Utility"
             Subtot := Subtotal + (TransSalesEntry."Net Amount" - TransSalesEntry."Discount Amount") + TransSalesEntry."VAT Amount";
         end else begin
             if Transaction.Get(TransSalesEntry."Store No.", TransSalesEntry."POS Terminal No.", TransSalesEntry."Transaction No.") then begin //VINCENT20260108
-                if (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::"Regular Customer") OR (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::REG) OR (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::VATW) OR (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::WHT1) then begin//VINCENT20260106
+                if (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::"Regular Customer") OR (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::REG) OR (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::VATW) OR (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::WHT1) OR (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::ZRWH) then begin//VINCENT20260106
                     Subtot := Subtot + TransSalesEntry."Net Amount" + TransSalesEntry."VAT Amount" + TransSalesEntry."Discount Amount" + (Transaction."WHT Amount" + Transaction."VAT Withholding");
                 end else begin
                     Subtot := Subtot + TransSalesEntry."Net Amount" - TransSalesEntry."Discount Amount";
@@ -4718,7 +4718,8 @@ codeunit 50000 "AP POS Print Utility"
             // IF STRLEN(FieldValue[2]) > 9 THEN
             //     DSTR1 := '#L################ #N#############';
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
-            decLSalesAmount += abs(recLVATAmountTemp."Unit Price Incl. VAT");
+            decLSalesAmount += recLVATAmountTemp."Unit Price Incl. VAT";
+            //Message('%1', recLVATAmountTemp."Unit Price Incl. VAT");
             decLVATAmount += recLVATAmountTemp."Unit Price";
         end else begin
             FieldValue[1] := 'Zero Rated Sales';

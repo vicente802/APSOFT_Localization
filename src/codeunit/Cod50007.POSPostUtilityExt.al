@@ -196,7 +196,7 @@ codeunit 50007 "POSPostUtilityExt"
         end;
         if txtLCustomerType = 'MOV' then begin
             Transaction."Customer Type" := Transaction."Customer Type"::MOV;
-            Transaction."Transaction Code Type" := Transaction."Transaction Code Type"::ATHL;
+            Transaction."Transaction Code Type" := Transaction."Transaction Code Type"::MOV;
             Transaction."Beginning Balance" := POSTrans."Beginning Balance";
             Transaction."Current Balance" := POSTrans."Current Balance";
         end;
