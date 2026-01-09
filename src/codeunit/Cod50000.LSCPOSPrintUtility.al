@@ -2418,7 +2418,7 @@ codeunit 50000 "AP POS Print Utility"
                         PrintTransTaxInfo(Transaction, Tray, RightIndent);
                 end;
                 DSTR1 := '#L################# #R###############   ';
-                FieldValue[1] := Text005 + '1 ' + Globals.GetValue('CURRSYM');
+                FieldValue[1] := Text005 + ' ' + Globals.GetValue('CURRSYM');
                 if GenPosFunc."Print Disc/Cpn Info on Slip" in
                     [GenPosFunc."Print Disc/Cpn Info on Slip"::"Detail for each line and Sub-total",
                     GenPosFunc."Print Disc/Cpn Info on Slip"::"Summary information below Sub-total"] then begin
@@ -2824,9 +2824,9 @@ codeunit 50000 "AP POS Print Utility"
         if Globals.UseSalesTax and LocalizationExt.IsNALocalizationEnabled then begin
             Subtot := Subtotal + (TransSalesEntry."Net Amount" - TransSalesEntry."Discount Amount") + TransSalesEntry."VAT Amount";
         end else begin
-            if Transaction.Get(TransSalesEntry."Store No.", TransSalesEntry."POS Terminal No.", TransSalesEntry."Transaction No.") then begin
-                if (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::"Regular Customer") OR (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::REG) then begin//VINCENT20260106
-                    Subtot := Subtot + TransSalesEntry."Net Amount" + TransSalesEntry."VAT Amount" + TransSalesEntry."Discount Amount";
+            if Transaction.Get(TransSalesEntry."Store No.", TransSalesEntry."POS Terminal No.", TransSalesEntry."Transaction No.") then begin //VINCENT20260108
+                if (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::"Regular Customer") OR (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::REG) OR (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::VATW) OR (Transaction."Transaction Code Type" = Transaction."Transaction Code Type"::WHT1) then begin//VINCENT20260106
+                    Subtot := Subtot + TransSalesEntry."Net Amount" + TransSalesEntry."VAT Amount" + TransSalesEntry."Discount Amount" + (Transaction."WHT Amount" + Transaction."VAT Withholding");
                 end else begin
                     Subtot := Subtot + TransSalesEntry."Net Amount" - TransSalesEntry."Discount Amount";
                 end;
@@ -4024,7 +4024,7 @@ codeunit 50000 "AP POS Print Utility"
                                     if SalesEntry."VAT Code" = 'VE' then begin//VINCENT20260106
                                         recLVATAmountTemp."Unit Price Incl. VAT" := -SalesEntry."Net Amount" + SalesEntry."Discount Amount";//- SalesEntry."Total Discount";
                                     end else begin
-                                        if (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::REG) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::WHT1) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::"Regular Customer") then begin
+                                        if (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::REG) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::VATW) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::WHT1) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::"Regular Customer") then begin
                                             recLVATAmountTemp."Unit Price Incl. VAT" := abs(-SalesEntry."Net Amount" + SalesEntry."Discount Amount") + SalesEntry."VAT Amount";
                                         end else
                                             recLVATAmountTemp."Unit Price Incl. VAT" := abs(SalesEntry."Net Amount");
@@ -4034,7 +4034,7 @@ codeunit 50000 "AP POS Print Utility"
                                     //VINCENT20260107
                                     recLVATAmountTemp."No." := SalesEntry."VAT Code";
                                     recLVATAmountTemp."Unit Price" := recLVATAmountTemp."Unit Price" + SalesEntry."VAT Amount";
-                                    if (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::REG) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::WHT1) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::"Regular Customer") then begin
+                                    if (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::REG) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::VATW) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::WHT1) AND (Transaction."Transaction Code Type" <> Transaction."Transaction Code Type"::"Regular Customer") then begin
                                         recLVATAmountTemp."Unit Price Incl. VAT" += abs(-SalesEntry."Net Amount" + SalesEntry."Discount Amount") + SalesEntry."VAT Amount";
                                     end else
                                         recLVATAmountTemp."Unit Price Incl. VAT" += abs(SalesEntry."Net Amount");
@@ -4052,7 +4052,7 @@ codeunit 50000 "AP POS Print Utility"
                             END ELSE BEGIN
                                 recLVATAmountTemp."No." := 'VZ';
                                 recLVATAmountTemp."Unit Price" := recLVATAmountTemp."Unit Price" + SalesEntry."VAT Amount";
-                                recLVATAmountTemp."Unit Price Incl. VAT" += SalesEntry."Net Amount";
+                                recLVATAmountTemp."Unit Price Incl. VAT" += abs(SalesEntry."Net Amount");
                                 recLVATAmountTemp.MODIFY();
                             END;
                         end;
@@ -4718,7 +4718,7 @@ codeunit 50000 "AP POS Print Utility"
             // IF STRLEN(FieldValue[2]) > 9 THEN
             //     DSTR1 := '#L################ #N#############';
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
-            decLSalesAmount += recLVATAmountTemp."Unit Price Incl. VAT";
+            decLSalesAmount += abs(recLVATAmountTemp."Unit Price Incl. VAT");
             decLVATAmount += recLVATAmountTemp."Unit Price";
         end else begin
             FieldValue[1] := 'Zero Rated Sales';
@@ -4734,9 +4734,10 @@ codeunit 50000 "AP POS Print Utility"
             FieldValue[2] := POSFunctions.FormatAmount(-ROUND(decLTotalSalesAmount, 0.01, '='));
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
         END ELSE BEGIN
-            decLTotalSalesAmount := decLSalesAmount - decLVATAmount - TotalSavings - Transaction."WHT Amount";
+            decLTotalSalesAmount := decLSalesAmount - decLVATAmount - TotalSavings - Transaction."WHT Amount" - Transaction."VAT Withholding";
+            Message('%1 -- %2 -- %3 -- %4 -- %5 -- %6', decLSalesAmount, decLVATAmount, TotalSavings, Transaction."WHT Amount", Transaction."VAT Withholding", Transaction."Zero Rated Amount");
             FieldValue[1] := 'Amount Due';
-            FieldValue[2] := POSFunctions.FormatAmount((ROUND(decLTotalSalesAmount, 0.01, '=')));
+            FieldValue[2] := POSFunctions.FormatAmount(Abs(ROUND(decLTotalSalesAmount, 0.01, '=')));
             cduSender.PrintLine(Tray, cduSender.FormatLine(cduSender.FormatStr(FieldValue, DSTR1), FALSE, FALSE, FALSE, FALSE));
             PrintSeperator(2);
         END;

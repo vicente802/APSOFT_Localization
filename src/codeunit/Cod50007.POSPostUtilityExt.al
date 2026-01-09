@@ -66,7 +66,7 @@ codeunit 50007 "POSPostUtilityExt"
         POSTransaction: Record "LSC POS Transaction";
     begin
         POSTransaction.Get(POSTransLineTmp."Receipt No.");
-        if POSTransaction."Transaction Code Type" = POSTransaction."Transaction Code Type"::WHT1 THEN begin
+        if (POSTransaction."Transaction Code Type" = POSTransaction."Transaction Code Type"::WHT1) AND (POSTransaction."Transaction Code Type" = POSTransaction."Transaction Code Type"::VATW) AND (POSTransaction."Transaction Code Type" = POSTransaction."Transaction Code Type"::ZRWH) THEN begin
             decVat := POSTransLineTmp.Amount - (POSTransLineTmp.Amount / (1 + (POSTransLineTmp."VAT %" / 100)));
             POSTransLineTmp."Net Amount" := Round(POSTransLineTmp.Amount / (1 + (POSTransLineTmp."VAT %" / 100)), 0.01);
             POSTransLineTmp."VAT Amount" := Round(decVat, 0.01);
@@ -175,16 +175,18 @@ codeunit 50007 "POSPostUtilityExt"
             Transaction."Customer Type" := Transaction."Customer Type"::"VAT Withholding Tax";
             Transaction."Transaction Code Type" := Transaction."Transaction Code Type"::VATW;
             Transaction."VAT Withholding" := POSTrans."VAT Withholding";
+            Transaction."WHT Amount" := POSTrans."WHT Amount";//VINCENT20260108
         end;
         if txtLCustomerType = 'ZERO' then begin
             Transaction."Customer Type" := Transaction."Customer Type"::"Zero Rated";
             Transaction."Transaction Code Type" := Transaction."Transaction Code Type"::ZERO;
             Transaction."Zero Rated Amount" := POSTrans."Zero Rated Amount";
         end;
-        if txtLCustomerType = 'ZRWH' then begin
+        if txtLCustomerType = 'ZRWH' then begin//VINCENT20260109
             Transaction."Customer Type" := Transaction."Customer Type"::ZRWH;
             Transaction."Transaction Code Type" := Transaction."Transaction Code Type"::ZRWH;
             Transaction."ZRWHT Amount" := POSTrans."ZRWHT Amount";
+            Transaction."WHT Amount" := POSTrans."WHT Amount";
         end;
         if txtLCustomerType = 'ATHL' then begin
             Transaction."Customer Type" := Transaction."Customer Type"::ATHL;
